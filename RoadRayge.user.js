@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Arras Graphics Client
+// @name         RoadRayge - Road & Ray's Graphics Editor (for arras.io)
 // @namespace    https://github.com/Ray-Adams
 // @version      2.0.1
-// @description  Fully customizable visual enhancements for arras.io
-// @author       Ray Adams
+// @description  Fully customizable visual enhancements for arras.io, now including theme editing!
+// @author       Ray Adams and Road#6943
 // @match        *://arras.io/*
 // @match        *://arras.netlify.app/*
 // @run-at       document-end
