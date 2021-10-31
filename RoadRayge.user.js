@@ -395,9 +395,9 @@
 
             node.addEventListener('input', () => {
                 if (node.validity.valid) {
-                    parsedGcSettings[prop][key] = +node['value'];
+                    parsedGcSettings[prop][key] = Number(node['value']);
                     _localStorage.gcSettings = JSON.stringify(parsedGcSettings);
-                    _Arras[prop][key] = +node['value'];
+                    _Arras[prop][key] = Number(node['value']);
                 };
             });
 
@@ -415,12 +415,24 @@
 
     }
 
+    /* Custom inputs are ones that aren't provided by the Arras() object, and are included by this script's authors 
+     * Currently, there is just 1 - Custom Background Image
+    */
+    const numCustomInputs = 1;
+    const numGraphicalInputs = Object.keys(_Arras.graphical).length;
+    const numGuiInputs = Object.keys(_Arras.gui).length;
+
+    /* Last indices for their respective sections */
+    const graphicalEndIndex = numGraphicalInputs + numCustomInputs - 1;
+    const guiEndIndex = numGuiInputs + graphicalEndIndex;
+
     document.querySelectorAll('.gc-input').forEach((currentNode, index) => {
 
         const nodeData = currentNode.id.split('-');
         const type = nodeData[1];
         const key = nodeData[2];
 
+        /* First input is background image */
         if (index === 0) {
             currentNode.addEventListener('keyup', () => {
 
@@ -432,16 +444,17 @@
                 };
 
             });
-        } else if (index >= 1 && index <= 17) {
+            /* Graphical Inputs */
+        } else if (index <= graphicalEndIndex) {
 
             addInputListener(currentNode, 'graphical', key, type);
 
-        } else if (index > 17) {
+            /* GUI Inputs */
+        } else if (index <= guiEndIndex) {
 
             addInputListener(currentNode, 'gui', key, type);
 
-        };
-
+        }
     });
 
     console.info('%c Graphics Client Activated','background:linear-gradient(to right,#1fa2ff,#12d8fa,#a6ffcb);color:#fff;display:block;text-shadow:0 1px 0 rgba(0,0,0,.3);text-align:center;font-weight:bold;padding:20px;font-size:24px');
