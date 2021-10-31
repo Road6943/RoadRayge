@@ -468,7 +468,7 @@
     
     // All code added below here will be wrapped in IIFE's or classes to allow for modularization and cleaner code separation
 
-    // This IIFE adds extra ways to close the container, such as with the esc key or by clicking outside the container
+    // Adds extra ways to close the container, such as with the esc key or by clicking outside the container
     (function containerClosingIIFE() {
         // Relates to the stuff that we'd want to hide when the 'x' button is clicked
         // The container is essentially the visual parts of RoadRayge minus the gear/x button
@@ -494,4 +494,15 @@
             }
         });
     })();
+
+    // Prevents keyboard input in the container from interfering with the game's controls
+    // for example, typing 'e' in the container shouldn't toggle autofire and typing 'wasd' shouldn't move your tank
+    (function stopKeyboardPropagation() {
+        document.querySelectorAll('.gc-input').forEach((currentNode) => {
+            currentNode.addEventListener("keydown", e => {
+                e.stopPropagation();
+            })
+        });
+    })();
+
 })()
