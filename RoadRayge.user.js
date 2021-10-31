@@ -13,499 +13,465 @@
 // @license      MIT
 // ==/UserScript==
 
-(() => {
+'use strict';
 
-    'use strict';
+const _Arras = Arras(), _localStorage = localStorage;
 
-    const _Arras = Arras(), _localStorage = localStorage;
+// Initialize localStorage settings (if not already present)
+_localStorage.gcSettings = _localStorage.gcSettings || JSON.stringify(_Arras);
 
-    /* Initialize localStorage settings (if they're not already present) */
-    _localStorage.gcSettings = _localStorage.gcSettings || JSON.stringify(_Arras)
+let parsedGcSettings = JSON.parse(_localStorage.gcSettings);
 
-    let parsedGcSettings = JSON.parse(_localStorage.gcSettings);
+// Apply localStorage settings
+Object.keys(parsedGcSettings).forEach(prop => {
+    for (let [key, value] of Object.entries(parsedGcSettings[prop])) {
+        _Arras[prop][key] = value;
+    };
+})
 
-    /* Apply localStorage settings */
-    Object.keys(parsedGcSettings).forEach(prop => {
+if (_localStorage.gcBackgroundImage) {
+    document.body.style.background = `url(${_localStorage.gcBackgroundImage}) center / cover no-repeat`;
+}
 
-        for (let [key, value] of Object.entries(parsedGcSettings[prop])) {
+/*
+ *  Source: https://gist.github.com/aharl/84fb1bfa937a688dd7203258591c2ca5
+ *  Dynamically creates element(s)
+ */
+const elementFactory = (type, attributes, ...children) => {
+    const element = document.createElement(type);
 
-            _Arras[prop][key] = value;
-
-        };
-
-    });
-
-    if (_localStorage.gcBackgroundImage) document.body.style.background = `url(${_localStorage.gcBackgroundImage}) center / cover no-repeat`;
-
-    /*
-     * Source: https://gist.github.com/aharl/84fb1bfa937a688dd7203258591c2ca5
-     * Dynamically creates element(s)
-     */
-    const elementFactory = (type, attributes, ...children) => {
-
-        const element = document.createElement(type);
-
-        for (let key in attributes) {
-            element.setAttribute(key, attributes[key]);
-        };
-
-        children.flat().forEach(child => {
-            if (typeof child === "string") {
-                element.appendChild(document.createTextNode(child));
-            } else {
-                element.appendChild(child);
-            }
-        });
-
-        return element;
-
+    for (let key in attributes) {
+        element.setAttribute(key, attributes[key]);
     };
 
-    /* CSS styles for UI */
-    const styles = elementFactory('style', {}, `
-        body {
-            background-size: cover;
+    children.flat().forEach(child => {
+        if (typeof child === "string") {
+            element.appendChild(document.createTextNode(child));
+        } else {
+            element.appendChild(child);
         }
+    });
 
-        #gc-settings-button {
-            height: 30px;
-            width: 30px;
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            border: none;
-            display: inline-block;
-            opacity: 0.75;
-            background: white;
-            background-image: url('data:image/svg+xml,%3Csvg xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" fill%3D"%23505050" viewBox%3D"0 0 16 16" width%3D"20" height%3D"20"%3E%3Cpath d%3D"M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"%3E%3C%2Fpath%3E%3C%2Fsvg%3E');
-            background-repeat: no-repeat;
-            background-position: center;
-        }
+    return element;
+};
 
-        #gc-settings-button:hover {
-            background-color: #EDEDF0 !important;
-            opacity: 0.75 !important;
-        }
+// CSS styles for UI
+const styles = elementFactory('style', {}, `
+    body {
+        background-size: cover;
+    }
 
-        .gc-settings-menu.gc-container,
-        .gc-settings-menu.close {
-            display: block;
-            height: 100%;
-            width: 0;
-            position: fixed;
-            z-index: 99999;
-            top: 0;
-            right: 0;
-            background: linear-gradient(to bottom, #cbe0ff, #cfffff);
-            overflow-x: hidden;
-            overflow-y: scroll;
-            transition: 0.5s;
-        }
+    #gc-settings-button {
+        height: 30px;
+        width: 30px;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        border: none;
+        display: inline-block;
+        opacity: 0.75;
+        background: white;
+        background-image: url('data:image/svg+xml,%3Csvg xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" fill%3D"%23505050" viewBox%3D"0 0 16 16" width%3D"20" height%3D"20"%3E%3Cpath d%3D"M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"%3E%3C%2Fpath%3E%3C%2Fsvg%3E');
+        background-repeat: no-repeat;
+        background-position: center;
+    }
 
-        .gc-settings-menu.gc-close {
-            position: absolute;
-            top: -5px;
-            right: 10px;
-            font-size: 42px;
-            margin-left: 25px;
-            text-decoration: none;
-        }
+    #gc-settings-button:hover {
+        background-color: #EDEDF0 !important;
+        opacity: 0.75 !important;
+    }
 
-        .gc-settings-menu.gc-close:hover {
-            color: gray;
-        }
+    .gc-settings-menu.gc-container,
+    .gc-settings-menu.close {
+        display: block;
+        height: 100%;
+        width: 0;
+        position: fixed;
+        z-index: 99999;
+        top: 0;
+        right: 0;
+        background: linear-gradient(to bottom, #cbe0ff, #cfffff);
+        overflow-x: hidden;
+        overflow-y: scroll;
+        transition: 0.5s;
+    }
 
-        h1.gc-title {
-            font-size: 36px;
-            font-weight: bold;
-            margin-top: 15px;
-            margin-bottom: 15px;
-        }
+    .gc-settings-menu.gc-close {
+        position: absolute;
+        top: -5px;
+        right: 10px;
+        font-size: 42px;
+        margin-left: 25px;
+        text-decoration: none;
+    }
 
-        h2.gc-title {
-            font-size: 20px;
-            text-align: center;
-            padding: 5px;
-            margin: 10px auto 10px auto;
-            border-radius: 5px;
-            width: 85%;
-            background-color: #2979df;
-            color: white;
-        }
+    .gc-settings-menu.gc-close:hover {
+        color: gray;
+    }
 
-        div.gc-setting {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 25px;
-        }
+    h1.gc-title {
+        font-size: 36px;
+        font-weight: bold;
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
 
-        div.gc-setting > input[type="text"] {
-            width: 85%;
-            height: 30px;
-            font-size: 14px;
-        }
+    h2.gc-title {
+        font-size: 20px;
+        text-align: center;
+        padding: 5px;
+        margin: 10px auto 10px auto;
+        border-radius: 5px;
+        width: 85%;
+        background-color: #2979df;
+        color: white;
+    }
 
-        div.gc-setting > input[type="number"] {
-            width: 40%;
-            height: 30px;
-            font-size: 14px;
-        }
+    div.gc-setting {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 25px;
+    }
 
-        div.gc-setting > .gc-label {
-            font-size: 15px;
-        }
+    div.gc-setting > input[type="text"] {
+        width: 85%;
+        height: 30px;
+        font-size: 14px;
+    }
 
-        .gc-switch {
-            position: relative;
-            display: inline-block;
-            width: 45px;
-            height: 25.5px;
-          }
+    div.gc-setting > input[type="number"] {
+        width: 40%;
+        height: 30px;
+        font-size: 14px;
+    }
 
-          .gc-switch input.gc-checkbox {
-            opacity: 0;
-            width: 0;
-            height: 0;
-          }
+    div.gc-setting > .gc-label {
+        font-size: 15px;
+    }
 
-          .gc-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-          }
+    .gc-switch {
+        position: relative;
+        display: inline-block;
+        width: 45px;
+        height: 25.5px;
+      }
 
-          .gc-slider:before {
-            position: absolute;
-            content: "";
-            height: 19.5px;
-            width: 19.5px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-          }
+      .gc-switch input.gc-checkbox {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
 
-          input.gc-checkbox:checked + .gc-slider {
-            background-color: #2196F3;
-          }
+      .gc-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+      }
 
-          input.gc-checkbox:focus + .gc-slider {
-            box-shadow: 0 0 1px #2196F3;
-          }
+      .gc-slider:before {
+        position: absolute;
+        content: "";
+        height: 19.5px;
+        width: 19.5px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+      }
 
-          input.gc-checkbox:checked + .gc-slider:before {
-            transform: translateX(19.5px);
-          }
-    `);
+      input.gc-checkbox:checked + .gc-slider {
+        background-color: #2196F3;
+      }
 
-    /* Dynamically create elements for each graphical or GUI setting */
-    const gcSettingsFactory = (prop) => {
+      input.gc-checkbox:focus + .gc-slider {
+        box-shadow: 0 0 1px #2196F3;
+      }
 
-        let elementArray = [];
+      input.gc-checkbox:checked + .gc-slider:before {
+        transform: translateX(19.5px);
+      }
+`);
 
-        for (let [key, value] of Object.entries(parsedGcSettings[prop])) {
+// Dynamically create elements for each graphical or GUI setting
+const gcSettingsFactory = (prop) => {
+    let elementArray = [];
 
-            if (typeof value === 'boolean') {
-
-                const settingsDiv = elementFactory(
-                    'div',
+    for (let [key, value] of Object.entries(parsedGcSettings[prop])) {
+        if (typeof value === 'boolean') {
+            const settingsDiv = elementFactory(
+                'div',
+                {
+                    class: 'gc-setting'
+                },
+                elementFactory(
+                    'label',
                     {
-                        class: 'gc-setting'
+                        class: 'gc-label'
                     },
-                    elementFactory(
-                        'label',
-                        {
-                            class: 'gc-label'
-                        },
-                        key
-                    ),
-                    elementFactory(
-                        'label',
-                        {
-                            class: 'gc-switch'
-                        },
-                        elementFactory(
-                            'input',
-                            {
-                                type: 'checkbox',
-                                class: 'gc-checkbox gc-input',
-                                id: `gc-boolean-${key}`
-                            }
-                        ),
-                        elementFactory(
-                            'span',
-                            {
-                                class: 'gc-slider'
-                            }
-                        )
-                    )
-                );
-
-                settingsDiv.lastChild.firstChild.checked = value;
-
-                elementArray.push(settingsDiv);
-
-            } else if (typeof value === 'number') {
-
-                const settingsDiv = elementFactory(
-                    'div',
+                    key
+                ),
+                elementFactory(
+                    'label',
                     {
-                        class: 'gc-setting'
+                        class: 'gc-switch'
                     },
-                    elementFactory(
-                        'label',
-                        {
-                            class: 'gc-label'
-                        },
-                        key
-                    ),
                     elementFactory(
                         'input',
                         {
-                            type: 'number',
-                            step: '0.00001',
-                            class: 'gc-input',
-                            id: `gc-number-${key}`
+                            type: 'checkbox',
+                            class: 'gc-checkbox gc-input',
+                            id: `gc-boolean-${key}`
+                        }
+                    ),
+                    elementFactory(
+                        'span',
+                        {
+                            class: 'gc-slider'
                         }
                     )
-                );
+                )
+            );
 
-                settingsDiv.lastChild.value = value;
+            settingsDiv.lastChild.firstChild.checked = value;
+            elementArray.push(settingsDiv);
+        } else if (typeof value === 'number') {
+            const settingsDiv = elementFactory(
+                'div',
+                {
+                    class: 'gc-setting'
+                },
+                elementFactory(
+                    'label',
+                    {
+                        class: 'gc-label'
+                    },
+                    key
+                ),
+                elementFactory(
+                    'input',
+                    {
+                        type: 'number',
+                        step: '0.00001',
+                        class: 'gc-input',
+                        id: `gc-number-${key}`
+                    }
+                )
+            );
 
-                elementArray.push(settingsDiv);
-
-            }
-
-        };
-
-        return elementArray;
-
-    }
-
-    const settingsButton = elementFactory(
-        'button',
-        {
-            id: 'gc-settings-button',
-            onclick: 'document.querySelector(".gc-settings-menu.gc-container").style.width = "350px"'
+            settingsDiv.lastChild.value = value;
+            elementArray.push(settingsDiv);
         }
-    );
+    };
 
-    const settingsMenu = elementFactory(
+    return elementArray;
+}
+
+const settingsButton = elementFactory(
+    'button',
+    {
+        id: 'gc-settings-button',
+        onclick: 'document.querySelector(".gc-settings-menu.gc-container").style.width = "350px"'
+    }
+);
+
+const settingsMenu = elementFactory(
+    'div',
+    {
+        class: 'gc-settings-menu gc-container'
+    },
+    elementFactory(
+        'a',
+        {
+            class: 'gc-settings-menu gc-close',
+            href: 'javascript:void(0)',
+            onclick: 'document.querySelector(".gc-settings-menu.gc-container").style.width = "0px"'
+        },
+        '×'
+    ),
+    elementFactory(
+        'h1',
+        {
+            class: 'gc-title'
+        },
+        'Graphics Client'
+    ),
+    elementFactory(
+        'h2',
+        {
+            class: 'gc-title'
+        },
+        'Background Image'
+    ),
+    elementFactory(
         'div',
         {
-            class: 'gc-settings-menu gc-container'
+            class: 'gc-setting'
         },
         elementFactory(
-            'a',
+            'label',
             {
-                class: 'gc-settings-menu gc-close',
-                href: 'javascript:void(0)',
-                onclick: 'document.querySelector(".gc-settings-menu.gc-container").style.width = "0px"'
+                class: 'gc-label'
             },
-            '×'
+            'URL:'
         ),
         elementFactory(
-            'h1',
+            'input',
             {
-                class: 'gc-title'
-            },
-            'Graphics Client'
-        ),
-        elementFactory(
-            'h2',
-            {
-                class: 'gc-title'
-            },
-            'Background Image'
-        ),
-        elementFactory(
-            'div',
-            {
-                class: 'gc-setting'
-            },
-            elementFactory(
-                'label',
-                {
-                    class: 'gc-label'
-                },
-                'URL:'
-            ),
-            elementFactory(
-                'input',
-                {
-                    type: 'text',
-                    class: 'gc-input',
-                    value: _localStorage.gcBackgroundImage || ''
-                }
-            )
-        ),
-        elementFactory(
-            'h2',
-            {
-                class: 'gc-title'
-            },
-            'Graphical'
-        ),
-        gcSettingsFactory('graphical'),
-        elementFactory(
-            'h2',
-            {
-                class: 'gc-title'
-            },
-            'GUI'
-        ),
-        gcSettingsFactory('gui')
-    );
+                type: 'text',
+                class: 'gc-input',
+                value: _localStorage.gcBackgroundImage || ''
+            }
+        )
+    ),
+    elementFactory(
+        'h2',
+        {
+            class: 'gc-title'
+        },
+        'Graphical'
+    ),
+    gcSettingsFactory('graphical'),
+    elementFactory(
+        'h2',
+        {
+            class: 'gc-title'
+        },
+        'GUI'
+    ),
+    gcSettingsFactory('gui')
+);
 
-    document.head.append(styles);
-    document.body.append(settingsButton);
-    document.body.append(settingsMenu);
+document.head.append(styles);
+document.body.append(settingsButton, settingsMenu);
 
 
-    /* Decrease visbility of settings button on game start */
-    const observer = new MutationObserver((mutationList) => {
-        for (let mutationRecord of mutationList) {
-            if (mutationRecord.removedNodes) {
-                for (let removedNode of mutationRecord.removedNodes) {
-                    if (removedNode.id === 'startMenuWrapper') {
-                        observer.disconnect();
+// Decrease visbility of settings button on game start
+const observer = new MutationObserver((mutationList) => {
+    for (let mutationRecord of mutationList) {
+        if (mutationRecord.removedNodes) {
+            for (let removedNode of mutationRecord.removedNodes) {
+                if (removedNode.id === 'startMenuWrapper') {
+                    observer.disconnect();
 
-                        settingsButton.style.backgroundColor = 'transparent',
-                        settingsButton.style.opacity = 0.25;
-                    }
+                    settingsButton.style.backgroundColor = 'transparent',
+                    settingsButton.style.opacity = 0.25;
                 }
             }
         }
-    });
-
-    observer.observe(document.querySelector('.mainWrapper'), {
-        childList: true,
-        subtree: true
-    });
-
-    /* Listen for input and update localStorage/Arras object */
-    const addInputListener = (node, prop, key, type) => {
-
-        if (type === 'number') {
-
-            node.addEventListener('input', () => {
-                if (node.validity.valid) {
-                    parsedGcSettings[prop][key] = Number(node['value']);
-                    _localStorage.gcSettings = JSON.stringify(parsedGcSettings);
-                    _Arras[prop][key] = Number(node['value']);
-                };
-            });
-
-        } else if (type === 'boolean') {
-
-            node.addEventListener('input', () => {
-                if (node.validity.valid) {
-                    parsedGcSettings[prop][key] = node['checked'];
-                    _localStorage.gcSettings = JSON.stringify(parsedGcSettings);
-                    _Arras[prop][key] = node['checked'];
-                };
-            });
-
-        };
-
     }
+});
 
-    /* Custom inputs are ones that aren't provided by the Arras() object, and are included by this script's authors 
-     * Currently, there is just 1 - Custom Background Image
-    */
-    const numCustomInputs = 1;
-    const numGraphicalInputs = Object.keys(_Arras.graphical).length;
-    const numGuiInputs = Object.keys(_Arras.gui).length;
+observer.observe(document.querySelector('.mainWrapper'), {
+    childList: true,
+    subtree: true
+});
 
-    /* Last indices for their respective sections */
-    const graphicalEndIndex = numGraphicalInputs + numCustomInputs - 1;
-    const guiEndIndex = numGuiInputs + graphicalEndIndex;
+// Listen for input and update localStorage & Arras object
+const addInputListener = (node, prop, key, type) => {
+    if (type === 'number') {
+        node.addEventListener('input', () => {
+            if (node.validity.valid) {
+                parsedGcSettings[prop][key] = Number(node['value']);
+                _localStorage.gcSettings = JSON.stringify(parsedGcSettings);
+                _Arras[prop][key] = Number(node['value']);
+            }
+        })
+    } else if (type === 'boolean') {
+        node.addEventListener('input', () => {
+            if (node.validity.valid) {
+                parsedGcSettings[prop][key] = node['checked'];
+                _localStorage.gcSettings = JSON.stringify(parsedGcSettings);
+                _Arras[prop][key] = node['checked'];
+            }
+        })
+    }
+}
 
-    document.querySelectorAll('.gc-input').forEach((currentNode, index) => {
+/* 
+ *  Custom inputs are ones that aren't provided by the Arras() object, and are included by this script's authors 
+ *  Currently, there is just 1 - Custom Background Image
+ */
+const numCustomInputs = 1;
+const numGraphicalInputs = Object.keys(_Arras.graphical).length;
+const numGuiInputs = Object.keys(_Arras.gui).length;
 
-        const nodeData = currentNode.id.split('-');
-        const type = nodeData[1];
-        const key = nodeData[2];
+// Last indices for their respective sections
+const graphicalEndIndex = numGraphicalInputs + numCustomInputs - 1;
+const guiEndIndex = numGuiInputs + graphicalEndIndex;
 
-        /* First input is background image */
-        if (index === 0) {
-            currentNode.addEventListener('keyup', () => {
+document.querySelectorAll('.gc-input').forEach((currentNode, index) => {
+    const nodeData = currentNode.id.split('-');
+    const type = nodeData[1];
+    const key = nodeData[2];
 
-                if (currentNode.validity.valid) {
+    // First input is background image
+    if (index === 0) {
+        currentNode.addEventListener('keyup', () => {
+            if (currentNode.validity.valid) {
+                _localStorage.gcBackgroundImage = currentNode.value;
+                document.body.style.background = `url(${_localStorage.gcBackgroundImage}) center / cover no-repeat`;
+            }
+        })
+        
+    // Graphical Inputs
+    } else if (index <= graphicalEndIndex) {
+        addInputListener(currentNode, 'graphical', key, type);
 
-                    _localStorage.gcBackgroundImage = currentNode.value;
-                    document.body.style.background = `url(${_localStorage.gcBackgroundImage}) center / cover no-repeat`;
+    // GUI Inputs 
+    } else if (index <= guiEndIndex) {
+        addInputListener(currentNode, 'gui', key, type);
+    }
+})
 
-                };
+// =========================================================================================================================================
+// =========================================================================================================================================
+//  Original Ray's Arras Graphics Client Code Ends Here ====================================================================================
+// =========================================================================================================================================
+// =========================================================================================================================================
 
-            });
-            /* Graphical Inputs */
-        } else if (index <= graphicalEndIndex) {
+// All code added below here will be wrapped in IIFE's or classes to allow for modularization and cleaner code separation
 
-            addInputListener(currentNode, 'graphical', key, type);
+// Adds extra ways to close the container, such as with the esc key or by clicking outside the container
+(function containerClosingIIFE() {
+    // Relates to the stuff that we'd want to hide when the 'x' button is clicked
+    // The container is essentially the visual parts of RoadRayge minus the gear/x button
+    const containerCssSelector = ".gc-settings-menu.gc-container";
+    const containerElement = document.querySelector(containerCssSelector);
 
-            /* GUI Inputs */
-        } else if (index <= guiEndIndex) {
+    // closeContainer is taken from an onclick event string in the code above
+    const closeContainer = () => { containerElement.style.width = "0px" };
+    const isContainerOpen = () => (containerElement.style.width !== "0px");
 
-            addInputListener(currentNode, 'gui', key, type);
-
+    // Close container when esc key pressed
+    document.addEventListener("keydown", e => {
+        if (e.key === "Escape") {
+            closeContainer();
         }
     });
 
-    console.info('%c Graphics Client Activated','background:linear-gradient(to right,#1fa2ff,#12d8fa,#a6ffcb);color:#fff;display:block;text-shadow:0 1px 0 rgba(0,0,0,.3);text-align:center;font-weight:bold;padding:20px;font-size:24px');
+    // Close container when click detected outside the window
+    document.addEventListener("click", e => {
+        const gameAreaWrapper = document.querySelector("div.gameAreaWrapper");
+        if (isContainerOpen() && gameAreaWrapper.contains(e.target)) {
+            closeContainer();
+        }
+    });
+})();
 
-
-    // =========================================================================================================================================
-    // =========================================================================================================================================
-    //  Original Ray's Arras Graphics Client Code Ends Here ====================================================================================
-    // =========================================================================================================================================
-    // =========================================================================================================================================
-    
-    // All code added below here will be wrapped in IIFE's or classes to allow for modularization and cleaner code separation
-
-    // Adds extra ways to close the container, such as with the esc key or by clicking outside the container
-    (function containerClosingIIFE() {
-        // Relates to the stuff that we'd want to hide when the 'x' button is clicked
-        // The container is essentially the visual parts of RoadRayge minus the gear/x button
-        const containerCssSelector = ".gc-settings-menu.gc-container";
-        const containerElement = document.querySelector(containerCssSelector);
-
-        // closeContainer is taken from an onclick event string in the code above
-        const closeContainer = () => { containerElement.style.width = "0px" };
-        const isContainerOpen = () => (containerElement.style.width !== "0px");
-
-        // Close container when esc key pressed
-        document.addEventListener("keydown", e => {
-            if (e.key === "Escape") {
-                closeContainer();
-            }
-        });
-
-        // Close container when click detected outside the window
-        document.addEventListener("click", e => {
-            const gameAreaWrapper = document.querySelector("div.gameAreaWrapper");
-            if (isContainerOpen() && gameAreaWrapper.contains(e.target)) {
-                closeContainer();
-            }
-        });
-    })();
-
-    // Prevents keyboard input in the container from interfering with the game's controls
-    // for example, typing 'e' in the container shouldn't toggle autofire and typing 'wasd' shouldn't move your tank
-    (function stopKeyboardPropagation() {
-        document.querySelectorAll('.gc-input').forEach((currentNode) => {
-            currentNode.addEventListener("keydown", e => {
-                e.stopPropagation();
-            })
-        });
-    })();
-
-})()
+// Prevents keyboard input in the container from interfering with the game's controls
+// for example, typing 'e' in the container shouldn't toggle autofire and typing 'wasd' shouldn't move your tank
+(function stopKeyboardPropagation() {
+    document.querySelectorAll('.gc-input').forEach((currentNode) => {
+        currentNode.addEventListener("keydown", e => {
+            e.stopPropagation();
+        })
+    });
+})();
