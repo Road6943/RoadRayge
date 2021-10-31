@@ -1,5 +1,6 @@
 root = true
 
-[*.js]
+# Matches multiple files with brace expansion notation
+[*.{js,css,html}]
 indent_style = tab
 indent_size = 4
