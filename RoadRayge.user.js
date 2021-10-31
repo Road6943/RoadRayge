@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Road & Ray's Graphics Editor (for arras.io)
 // @namespace    https://github.com/Ray-Adams
-// @version      2.0.1
+// @version      3.0.1
 // @description  Fully customizable visual enhancements for arras.io, now including theme editing!
 // @author       Ray Adams and Road#6943
 // @match        *://arras.io/*
@@ -459,4 +459,39 @@
 
     console.info('%c Graphics Client Activated','background:linear-gradient(to right,#1fa2ff,#12d8fa,#a6ffcb);color:#fff;display:block;text-shadow:0 1px 0 rgba(0,0,0,.3);text-align:center;font-weight:bold;padding:20px;font-size:24px');
 
+
+    // =========================================================================================================================================
+    // =========================================================================================================================================
+    //  Original Ray's Arras Graphics Client Code Ends Here ====================================================================================
+    // =========================================================================================================================================
+    // =========================================================================================================================================
+    
+    // All code added below here will be wrapped in IIFE's or classes to allow for modularization and cleaner code separation
+
+    // This IIFE adds extra ways to close the container, such as with the esc key or by clicking outside the container
+    (function containerClosingIIFE() {
+        // Relates to the stuff that we'd want to hide when the 'x' button is clicked
+        // The container is essentially the visual parts of RoadRayge minus the gear/x button
+        const containerCssSelector = ".gc-settings-menu.gc-container";
+        const containerElement = document.querySelector(containerCssSelector);
+
+        // closeContainer is taken from an onclick event string in the code above
+        const closeContainer = () => { containerElement.style.width = "0px" };
+        const isContainerOpen = () => (containerElement.style.width !== "0px");
+
+        // Close container when esc key pressed
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape") {
+                closeContainer();
+            }
+        });
+
+        // Close container when click detected outside the window
+        document.addEventListener("click", e => {
+            const gameAreaWrapper = document.querySelector("div.gameAreaWrapper");
+            if (isContainerOpen() && gameAreaWrapper.contains(e.target)) {
+                closeContainer();
+            }
+        });
+    })();
 })()
