@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.1.1-alpha
+// @version      1.1.2-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Road and Ray Adams
 // @match        *://arras.io/*
@@ -345,27 +345,6 @@ document.head.append(styles);
 document.body.append(settingsButton);
 document.body.append(settingsMenu);
 
-// Decrease visbility of settings button on game start
-const observer = new MutationObserver((mutationList) => {
-	for (let mutationRecord of mutationList) {
-		if (mutationRecord.removedNodes) {
-			for (let removedNode of mutationRecord.removedNodes) {
-				if (removedNode.id === 'startMenuWrapper') {
-					observer.disconnect();
-
-					settingsButton.style.backgroundColor = 'transparent',
-					settingsButton.style.opacity = 0.25;
-				}
-			}
-		}
-	}
-});
-
-observer.observe(document.querySelector('.mainWrapper'), {
-	childList: true,
-	subtree: true
-});
-
 // Listen for input and update localStorage & Arras object
 const addInputListener = (node, prop, key, type) => {
 	if (type === 'number') {
@@ -424,11 +403,11 @@ document.querySelectorAll('.gc-input').forEach((currentNode, index) => {
 	}
 });
 
-// =========================================================================================================================================
-// =========================================================================================================================================
-//  Original Ray's Arras Graphics Client Code Ends Here ====================================================================================
-// =========================================================================================================================================
-// =========================================================================================================================================
+/************************************************************************
+
+                                  MODULES
+
+ ************************************************************************/
 
 // All code added below here will be wrapped in IIFE's or classes to allow for modularization and cleaner code separation
 
@@ -466,5 +445,21 @@ document.querySelectorAll('.gc-input').forEach((currentNode, index) => {
 		currentNode.addEventListener('keydown', e => {
 			e.stopPropagation();
 		});
+	});
+})();
+
+// Settings button visual tweaks on game start (for visibility)
+(function decreaseGearButtonVisibility() {
+	const startButton = document.getElementById('startButton');
+	const playerNameInput = document.getElementById('playerNameInput');
+
+	const onGameStart = () => {
+		settingsButton.style.backgroundColor = 'transparent';
+		settingsButton.style.opacity = 0.25;
+	};
+
+	startButton.addEventListener('click', onGameStart);
+	playerNameInput.addEventListener('keydown', e => {
+		if (e.key === 'Enter') onGameStart();
 	});
 })();
