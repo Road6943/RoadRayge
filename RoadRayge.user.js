@@ -1,13 +1,16 @@
 // ==UserScript==
-// @name         RoadRayge - Road & Ray's Graphics Editor (for arras.io)
+// @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      3.0.1
-// @description  Fully customizable visual enhancements for arras.io, now including theme editing!
-// @author       Ray Adams and Road#6943
+// @version      1.0.1-alpha
+// @description  Fully customizable theme and graphics editor for arras.io
+// @author       Road and Ray Adams
 // @match        *://arras.io/*
 // @match        *://arras.netlify.app/*
+// @homepageURL  https://github.com/Road6943/RoadRayge
+// @supportURL   https://github.com/Road6943/RoadRayge/issues
 // @run-at       document-end
 // @grant        none
+// @license      MIT
 // ==/UserScript==
 
 (() => {
