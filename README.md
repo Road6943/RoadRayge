@@ -2,6 +2,8 @@
 Fully customizable theme and graphics editor for arras.io
 
 ## Release History
+* 1.2-alpha
+  * Migrated settings data to GM API
 * 1.1-alpha
   * Keyboard input no longer interferes with game controls
   * UI can be closed with the <kbd>Esc</kbd> key or by clicking outside
