@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.2.1-alpha
+// @version      1.2.2-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Road & Ray Adams
 // @match        *://arras.io/*
@@ -11,6 +11,7 @@
 // @run-at       document-end
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        GM_addStyle
 // @grant        unsafeWindow
 // @license      MIT
 // ==/UserScript==
@@ -20,21 +21,21 @@ const clone = JSON.parse(JSON.stringify(arras));
 const settings = GM_getValue('settings', clone);
 const backgroundImage = GM_getValue('backgroundImage');
 
-// Set and apply Arras() setting
+// Set and apply an `Arras()` setting
 const update = (prop, key, val) => {
 	settings[prop][key] = val;
 	GM_setValue('settings', settings);
 	arras[prop][key] = val;
 };
 
-// Apply all Arras() settings
-Object.keys(settings).forEach((prop) => {
-	for (let [key, val] of Object.entries(settings[prop])) {
+// Apply all `Arras()` settings
+for (let prop in settings) {
+	Object.entries(settings[prop]).forEach(([key, val]) => {
 		arras[prop][key] = val;
-	}
-});
+	});
+}
 
-// Apply background image on start menu
+// Apply background image on start page
 if (backgroundImage) {
 	let style = `url(${backgroundImage}) center / cover no-repeat`;
 	document.body.style.background = style;
@@ -42,7 +43,7 @@ if (backgroundImage) {
 
 /*
  *  Source: https://gist.github.com/Ray-Adams/8c9a5ae29284f71c5a325b16aff510fc
- *  Simple hyperscript implementation
+ *  Simple hyperscript implementation (with listener support)
  */
 const h = (tag, attrs, ...children) => {
 	const el = document.createElement(tag);
@@ -53,12 +54,28 @@ const h = (tag, attrs, ...children) => {
 		for (let attr in attrs) el.setAttribute(attr, attrs[attr]);
 	}
 
-	children.forEach(child => el.append(child));
+	children.forEach(child => {
+		if (typeof child === 'string' || child instanceof Node) {
+			return el.append(child);
+		}
+
+		if (typeof child !== 'object') return;
+		
+		Object.entries(child).forEach(([type, cb]) => {
+			el.addEventListener(type, cb.bind(el));
+		});
+	});
+	
 	return el;
 };
 
-// CSS styles for UI
-const styles = h('style', `
+/************************************************************************
+
+                                    CSS
+
+ ************************************************************************/
+
+GM_addStyle(`
 	body {
         background-size: cover;
     }
@@ -202,18 +219,22 @@ const styles = h('style', `
 	}
 `);
 
-// Dynamically create elements for each Arras() setting
+/************************************************************************
+
+                               USER INTERFACE
+
+ ************************************************************************/
+
+// Dynamically create elements for each `Arras()` setting
 const settingsFactory = (prop) =>
 	Object.entries(settings[prop]).map(([key, val]) => {
 		let input;
 
-		const watchInput = (node, isCheckbox = true) => {
-			node.addEventListener('input', () => {
-				if (!node.validity.valid) return;
+		const onInput = function () {
+			if (!this.validity.valid) return;
 
-				const newVal = isCheckbox ? node.checked : Number(node.value);
-				update(prop, key, newVal);
-			});
+			const newVal = this.type === 'checkbox' ? this.checked : Number(this.value);
+			update(prop, key, newVal);
 		};
 
 		if (typeof val === 'boolean') {
@@ -223,21 +244,19 @@ const settingsFactory = (prop) =>
 				checkbox = h('input', {
 					type: 'checkbox',
 					class: 'gc-checkbox gc-input',
-				}),
+				}, { input: onInput }),
 				h('span', { class: 'gc-slider' })
 			);
 
 			checkbox.checked = val;
-			watchInput(checkbox);
 		} else if (typeof val === 'number') {
 			input = h('input', {
 				type: 'number',
 				step: '0.00001',
 				class: 'gc-input',
-			});
+			}, { input: onInput });
 
 			input.value = val;
-			watchInput(input, false);
 		}
 
 		return h('div', { class: 'gc-setting' },
@@ -246,24 +265,27 @@ const settingsFactory = (prop) =>
 		);
 	});
 
-const settingsButton = h('button', { id: 'gc-settings-button' });
-settingsButton.addEventListener('click', () => {
-	document.querySelector('.gc-settings-menu.gc-container').style.width = '350px';
+const settingsButton = h('button', { id: 'gc-settings-button' }, {
+	click () {
+		document.querySelector('.gc-settings-menu.gc-container').style.width = '350px';
+	}
 });
 
-const closeButton = h('a', { class: 'gc-settings-menu gc-close' }, '×');
-closeButton.addEventListener('click', () => {
-	document.querySelector('.gc-settings-menu.gc-container').style.width = '0px';
+const closeButton = h('a', { class: 'gc-settings-menu gc-close' }, '×', {
+	click () {
+		this.parentNode.style.width = '0px';
+	}
 });
 
 const backgroundImageInput = h('input', { 
 	type: 'text',
 	class: 'gc-input',
 	value: backgroundImage || ''
-});
-backgroundImageInput.addEventListener('input', () => {
-	GM_setValue('backgroundImage', backgroundImageInput.value);
-	document.body.style.background = `url(${backgroundImageInput.value}) center / cover no-repeat`;
+}, {
+	input () {
+		GM_setValue('backgroundImage', this.value);
+		document.body.style.background = `url(${this.value}) center / cover no-repeat`;
+	}
 });
 
 const settingsMenu = h('div', { class: 'gc-settings-menu gc-container' },
@@ -280,7 +302,6 @@ const settingsMenu = h('div', { class: 'gc-settings-menu gc-container' },
 	...settingsFactory('gui')
 );
 
-document.head.append(styles);
 document.body.append(settingsButton, settingsMenu);
 
 /************************************************************************
@@ -323,7 +344,7 @@ document.body.append(settingsButton, settingsMenu);
 (function stopKeyboardPropagation() {
 	document.querySelectorAll('.gc-input').forEach((currentNode) => {
 		currentNode.addEventListener('keydown', e => {
-			e.stopPropagation();
+			e.key !== 'Escape' && e.stopPropagation();
 		});
 	});
 })();
