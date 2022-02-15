@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.2.0-alpha
+// @version      1.2.1-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Road & Ray Adams
 // @match        *://arras.io/*
@@ -202,213 +202,86 @@ const styles = h('style', `
 	}
 `);
 
-// Dynamically create elements for each graphical or GUI setting
-const gcSettingsFactory = (prop) => {
-	let elementArray = [];
+// Dynamically create elements for each Arras() setting
+const settingsFactory = (prop) =>
+	Object.entries(settings[prop]).map(([key, val]) => {
+		let input;
 
-	for (let [key, value] of Object.entries(settings[prop])) {
-		if (typeof value === 'boolean') {
-			const settingsDiv = h(
-				'div',
-				{
-					class: 'gc-setting'
-				},
-				h(
-					'label',
-					{
-						class: 'gc-label'
-					},
-					key
-				),
-				h(
-					'label',
-					{
-						class: 'gc-switch'
-					},
-					h(
-						'input',
-						{
-							type: 'checkbox',
-							class: 'gc-checkbox gc-input',
-							id: `gc-boolean-${key}`
-						}
-					),
-					h(
-						'span',
-						{
-							class: 'gc-slider'
-						}
-					)
-				)
+		const watchInput = (node, isCheckbox = true) => {
+			node.addEventListener('input', () => {
+				if (!node.validity.valid) return;
+
+				const newVal = isCheckbox ? node.checked : Number(node.value);
+				update(prop, key, newVal);
+			});
+		};
+
+		if (typeof val === 'boolean') {
+			let checkbox;
+
+			input = h('label', { class: 'gc-switch' },
+				checkbox = h('input', {
+					type: 'checkbox',
+					class: 'gc-checkbox gc-input',
+				}),
+				h('span', { class: 'gc-slider' })
 			);
 
-			settingsDiv.lastChild.firstChild.checked = value;
-			elementArray.push(settingsDiv);
-		} else if (typeof value === 'number') {
-			const settingsDiv = h(
-				'div',
-				{
-					class: 'gc-setting'
-				},
-				h(
-					'label',
-					{
-						class: 'gc-label'
-					},
-					key
-				),
-				h(
-					'input',
-					{
-						type: 'number',
-						step: '0.00001',
-						class: 'gc-input',
-						id: `gc-number-${key}`
-					}
-				)
-			);
-
-			settingsDiv.lastChild.value = value;
-			elementArray.push(settingsDiv);
-		}
-	}
-
-	return elementArray;
-};
-
-const settingsButton = h(
-	'button',
-	{
-		id: 'gc-settings-button',
-		onclick: 'document.querySelector(".gc-settings-menu.gc-container").style.width = "350px"'
-	}
-);
-
-const settingsMenu = h(
-	'div',
-	{
-		class: 'gc-settings-menu gc-container'
-	},
-	h(
-		'a',
-		{
-			class: 'gc-settings-menu gc-close',
-			href: 'javascript:void(0)',
-			onclick: 'document.querySelector(".gc-settings-menu.gc-container").style.width = "0px"'
-		},
-		'×'
-	),
-	h(
-		'h1',
-		{
-			class: 'gc-title'
-		},
-		'Graphics Client'
-	),
-	h(
-		'h2',
-		{
-			class: 'gc-title'
-		},
-		'Background Image'
-	),
-	h(
-		'div',
-		{
-			class: 'gc-setting'
-		},
-		h(
-			'label',
-			{
-				class: 'gc-label'
-			},
-			'URL:'
-		),
-		h(
-			'input',
-			{
-				type: 'text',
+			checkbox.checked = val;
+			watchInput(checkbox);
+		} else if (typeof val === 'number') {
+			input = h('input', {
+				type: 'number',
+				step: '0.00001',
 				class: 'gc-input',
-				value: backgroundImage || ''
-			}
-		)
+			});
+
+			input.value = val;
+			watchInput(input, false);
+		}
+
+		return h('div', { class: 'gc-setting' },
+			h('label', { class: 'gc-label' }, key),
+			input
+		);
+	});
+
+const settingsButton = h('button', { id: 'gc-settings-button' });
+settingsButton.addEventListener('click', () => {
+	document.querySelector('.gc-settings-menu.gc-container').style.width = '350px';
+});
+
+const closeButton = h('a', { class: 'gc-settings-menu gc-close' }, '×');
+closeButton.addEventListener('click', () => {
+	document.querySelector('.gc-settings-menu.gc-container').style.width = '0px';
+});
+
+const backgroundImageInput = h('input', { 
+	type: 'text',
+	class: 'gc-input',
+	value: backgroundImage || ''
+});
+backgroundImageInput.addEventListener('input', () => {
+	GM_setValue('backgroundImage', backgroundImageInput.value);
+	document.body.style.background = `url(${backgroundImageInput.value}) center / cover no-repeat`;
+});
+
+const settingsMenu = h('div', { class: 'gc-settings-menu gc-container' },
+	closeButton,
+	h('h1', { class: 'gc-title' }, 'Graphics Client'),
+	h('h2', { class: 'gc-title' }, 'Background Image'),
+	h('div', { class: 'gc-setting' },
+		h('label', { class: 'gc-label' }, 'URL:'),
+		backgroundImageInput
 	),
-	h(
-		'h2',
-		{
-			class: 'gc-title'
-		},
-		'Graphical'
-	),
-	...gcSettingsFactory('graphical'),
-	h(
-		'h2',
-		{
-			class: 'gc-title'
-		},
-		'GUI'
-	),
-	...gcSettingsFactory('gui')
+	h('h2', { class: 'gc-title' }, 'Graphical'),
+	...settingsFactory('graphical'),
+	h('h2', { class: 'gc-title' }, 'GUI'),
+	...settingsFactory('gui')
 );
 
 document.head.append(styles);
 document.body.append(settingsButton, settingsMenu);
-
-// Listen for input and update/apply setting
-const addInputListener = (node, prop, key, type) => {
-	if (type === 'number') {
-		node.addEventListener('input', () => {
-			if (!node.validity.valid) return;
-
-			const newVal = Number(node['value']);
-			update(prop, key, newVal);
-		});
-	} else if (type === 'boolean') {
-		node.addEventListener('input', () => {
-			if (!node.validity.valid) return;
-
-			const newVal = node['checked'];
-			update(prop, key, newVal);
-		});
-	}
-};
-
-/* 
- *  Custom inputs are ones that aren't provided by the Arras()
- *  object, and are included by this script's authors.
- *  Currently, there is just one - Custom Background Image.
- */
-const numCustomInputs = 1;
-const numGraphicalInputs = Object.keys(arras.graphical).length;
-const numGuiInputs = Object.keys(arras.gui).length;
-
-// Last indices for their respective sections
-const graphicalEndIndex = numGraphicalInputs + numCustomInputs - 1;
-const guiEndIndex = numGuiInputs + graphicalEndIndex;
-
-document.querySelectorAll('.gc-input').forEach((currentNode, index) => {
-	const nodeData = currentNode.id.split('-');
-	const type = nodeData[1];
-	const key = nodeData[2];
-
-	// First input is background image
-	if (index === 0) {
-		currentNode.addEventListener('keyup', () => {
-			if (!currentNode.validity.valid) return;
-
-			GM_setValue('backgroundImage', currentNode.value);
-			document.body.style.background = `url(${currentNode.value}) center / cover no-repeat`;
-		});
-
-	// Graphical Inputs
-	} else if (index <= graphicalEndIndex) {
-		addInputListener(currentNode, 'graphical', key, type);
-
-	// GUI Inputs
-	} else if (index <= guiEndIndex) {
-		addInputListener(currentNode, 'gui', key, type);
-	}
-});
 
 /************************************************************************
 
