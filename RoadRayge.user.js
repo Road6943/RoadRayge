@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.2.2-alpha
+// @version      1.2.3-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Road & Ray Adams
 // @match        *://arras.io/*
@@ -43,29 +43,34 @@ if (backgroundImage) {
 
 /*
  *  Source: https://gist.github.com/Ray-Adams/8c9a5ae29284f71c5a325b16aff510fc
- *  Simple hyperscript implementation (with listener support)
+ *  Versatile hyperscript implementation
  */
-const h = (tag, attrs, ...children) => {
-	const el = document.createElement(tag);
+const h = (query, attrs, ...children) => {
+	let el, classes = [];
+
+	query.split(/([#.])/).forEach((e, i, arr) => {
+		if (i === 0) {
+			el = document.createElement(e);
+		} else if (e === '#') {
+			el.id = arr[++i];
+		} else if (e === '.') {
+			classes.push(arr[++i]);
+		}
+	});
+	if (classes.length) el.className = classes.join(' ');
 
 	if (typeof attrs === 'string' || attrs instanceof Node) {
 		children.unshift(attrs);
-	} else {
-		for (let attr in attrs) el.setAttribute(attr, attrs[attr]);
+	} else if (typeof attrs === 'object') {
+		Object.entries(attrs).forEach(([key, val]) => {
+			if (key.startsWith('on')) {
+				return el.addEventListener(key.slice(2), val.bind(el));
+			}
+			el.setAttribute(key, val);
+		});
 	}
 
-	children.forEach(child => {
-		if (typeof child === 'string' || child instanceof Node) {
-			return el.append(child);
-		}
-
-		if (typeof child !== 'object') return;
-		
-		Object.entries(child).forEach(([type, cb]) => {
-			el.addEventListener(type, cb.bind(el));
-		});
-	});
-	
+	children.forEach(child => el.append(child));
 	return el;
 };
 
@@ -129,7 +134,7 @@ GM_addStyle(`
 	}
 
 	h1.gc-title {
-		font-size: 36px;
+		font-size: 32px;
 		font-weight: bold;
 		margin-top: 15px;
 		margin-bottom: 15px;
@@ -240,65 +245,63 @@ const settingsFactory = (prop) =>
 		if (typeof val === 'boolean') {
 			let checkbox;
 
-			input = h('label', { class: 'gc-switch' },
-				checkbox = h('input', {
-					type: 'checkbox',
-					class: 'gc-checkbox gc-input',
-				}, { input: onInput }),
-				h('span', { class: 'gc-slider' })
+			input = h('label.gc-switch',
+				checkbox = h(
+					'input.gc-checkbox.gc-input',
+					{ type: 'checkbox', oninput: onInput }
+				),
+				h('span.gc-slider')
 			);
 
 			checkbox.checked = val;
 		} else if (typeof val === 'number') {
-			input = h('input', {
+			input = h('input.gc-input', {
 				type: 'number',
 				step: '0.00001',
-				class: 'gc-input',
-			}, { input: onInput });
+				oninput: onInput
+			});
 
 			input.value = val;
 		}
 
-		return h('div', { class: 'gc-setting' },
-			h('label', { class: 'gc-label' }, key),
+		return h('div.gc-setting',
+			h('label.gc-label', key),
 			input
 		);
 	});
 
-const settingsButton = h('button', { id: 'gc-settings-button' }, {
-	click () {
-		document.querySelector('.gc-settings-menu.gc-container').style.width = '350px';
+const settingsButton = h('button#gc-settings-button', {
+	onclick () {
+		this.nextSibling.style.width = '350px';
 	}
 });
 
-const closeButton = h('a', { class: 'gc-settings-menu gc-close' }, '×', {
-	click () {
+const closeButton = h('a.gc-settings-menu.gc-close', {
+	onclick () {
 		this.parentNode.style.width = '0px';
 	}
-});
+}, '×');
 
-const backgroundImageInput = h('input', { 
+const backgroundImageInput = h('input.gc-input', { 
 	type: 'text',
-	class: 'gc-input',
-	value: backgroundImage || ''
-}, {
-	input () {
+	value: backgroundImage || '',
+	oninput () {
 		GM_setValue('backgroundImage', this.value);
 		document.body.style.background = `url(${this.value}) center / cover no-repeat`;
 	}
 });
 
-const settingsMenu = h('div', { class: 'gc-settings-menu gc-container' },
+const settingsMenu = h('div.gc-settings-menu.gc-container',
 	closeButton,
-	h('h1', { class: 'gc-title' }, 'Graphics Client'),
-	h('h2', { class: 'gc-title' }, 'Background Image'),
-	h('div', { class: 'gc-setting' },
-		h('label', { class: 'gc-label' }, 'URL:'),
+	h('h1.gc-title', 'RoadRayge Editor'),
+	h('h2.gc-title', 'Background Image'),
+	h('div.gc-setting',
+		h('label.gc-label', 'URL:'),
 		backgroundImageInput
 	),
-	h('h2', { class: 'gc-title' }, 'Graphical'),
+	h('h2.gc-title', 'Graphical'),
 	...settingsFactory('graphical'),
-	h('h2', { class: 'gc-title' }, 'GUI'),
+	h('h2.gc-title', 'GUI'),
 	...settingsFactory('gui')
 );
 
