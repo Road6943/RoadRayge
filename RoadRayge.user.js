@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.2.3-alpha
+// @version      1.2.4-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
-// @author       Road & Ray Adams
+// @author       Ray Adams & Road
 // @match        *://arras.io/*
 // @match        *://arras.netlify.app/*
 // @homepageURL  https://github.com/Road6943/RoadRayge
@@ -81,11 +81,13 @@ const h = (query, attrs, ...children) => {
  ************************************************************************/
 
 GM_addStyle(`
-	body {
-        background-size: cover;
-    }
+	:root {
+		--cog-svg: url('data:image/svg+xml,%3Csvg xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" fill%3D"%23505050" viewBox%3D"0 0 16 16" width%3D"20" height%3D"20"%3E%3Cpath d%3D"M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"%3E%3C%2Fpath%3E%3C%2Fsvg%3E');
+		--gradient: linear-gradient(to bottom, #cbe0ff, #cfffff);
+		--slider-active: #2196F3;
+	}
 
-	#gc-settings-button {
+	#r-btn--open {
 		height: 30px;
 		width: 30px;
 		position: fixed;
@@ -94,33 +96,15 @@ GM_addStyle(`
 		border: none;
 		display: inline-block;
 		opacity: 0.75;
-		background: white;
-		background-image: url('data:image/svg+xml,%3Csvg xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" fill%3D"%23505050" viewBox%3D"0 0 16 16" width%3D"20" height%3D"20"%3E%3Cpath d%3D"M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"%3E%3C%2Fpath%3E%3C%2Fsvg%3E');
-		background-repeat: no-repeat;
-		background-position: center;
+		background: white var(--cog-svg) no-repeat center;
 	}
 
-	#gc-settings-button:hover {
-		background-color: #EDEDF0 !important;
-		opacity: 0.75 !important;
+	#r-btn--open::hover {
+		background-color: #EDEDF0;
+		opacity: 0.75;
 	}
 
-	.gc-settings-menu.gc-container,
-	.gc-settings-menu.close {
-		display: block;
-		height: 100%;
-		width: 0;
-		position: fixed;
-		z-index: 99999;
-		top: 0;
-		right: 0;
-		background: linear-gradient(to bottom, #cbe0ff, #cfffff);
-		overflow-x: hidden;
-		overflow-y: scroll;
-		transition: 0.5s;
-	}
-
-	.gc-settings-menu.gc-close {
+	.r-btn--close {
 		position: absolute;
 		top: -5px;
 		right: 10px;
@@ -129,18 +113,30 @@ GM_addStyle(`
 		text-decoration: none;
 	}
 
-	.gc-settings-menu.gc-close:hover {
+	.r-btn--close:hover {
 		color: gray;
 	}
 
-	h1.gc-title {
-		font-size: 32px;
-		font-weight: bold;
-		margin-top: 15px;
-		margin-bottom: 15px;
+	#r-container {
+		display: block;
+		height: 100%;
+		width: 0;
+		position: fixed;
+		z-index: 99999;
+		top: 0;
+		right: 0;
+		background: var(--gradient);
+		overflow: hidden scroll;
+		transition: 0.5s;
 	}
 
-	h2.gc-title {
+	.r-heading--h1 {
+		font-size: 32px;
+		font-weight: bold;
+		margin: 15px auto;
+	}
+
+	.r-heading--h2 {
 		font-size: 20px;
 		text-align: center;
 		padding: 5px;
@@ -151,55 +147,52 @@ GM_addStyle(`
 		color: white;
 	}
 
-	div.gc-setting {
+	.r-setting {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		margin: 25px;
+		height: 30px;
 	}
 
-	div.gc-setting > input[type="text"] {
+	.r-input--text {
 		width: 85%;
-		height: 30px;
 		font-size: 14px;
 	}
 
-	div.gc-setting > input[type="number"] {
+	.r-input--number {
 		width: 40%;
 		height: 30px;
 		font-size: 14px;
 	}
 
-	div.gc-setting > .gc-label {
+	.r-input--checkbox {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+
+	.r-label {
 		font-size: 15px;
 	}
 
-	.gc-switch {
+	.r-switch {
 		position: relative;
 		display: inline-block;
 		width: 45px;
 		height: 25.5px;
 	}
 
-	.gc-switch input.gc-checkbox {
-		opacity: 0;
-		width: 0;
-		height: 0;
-	}
-
-	.gc-slider {
+	.r-slider {
 		position: absolute;
 		cursor: pointer;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
+		inset: 0;
 		background-color: #ccc;
 		transition: .4s;
 		border-radius: 34px;
 	}
 
-	.gc-slider:before {
+	.r-slider::before {
 		position: absolute;
 		content: "";
 		height: 19.5px;
@@ -211,15 +204,15 @@ GM_addStyle(`
 		border-radius: 50%;
 	}
 
-	input.gc-checkbox:checked + .gc-slider {
-		background-color: #2196F3;
+	.r-input--checkbox:checked + .r-slider {
+		background-color: var(--slider-active);
 	}
 
-	input.gc-checkbox:focus + .gc-slider {
-		box-shadow: 0 0 1px #2196F3;
+	.r-input--checkbox:focus + .r-slider {
+		box-shadow: 0 0 1px var(--slider-active);
 	}
 
-	input.gc-checkbox:checked + .gc-slider:before {
+	.r-input--checkbox:checked + .r-slider::before {
 		transform: translateX(19.5px);
 	}
 `);
@@ -245,17 +238,17 @@ const settingsFactory = (prop) =>
 		if (typeof val === 'boolean') {
 			let checkbox;
 
-			input = h('label.gc-switch',
+			input = h('label.r-switch',
 				checkbox = h(
-					'input.gc-checkbox.gc-input',
+					'input.r-input.r-input--checkbox',
 					{ type: 'checkbox', oninput: onInput }
 				),
-				h('span.gc-slider')
+				h('span.r-slider')
 			);
 
 			checkbox.checked = val;
 		} else if (typeof val === 'number') {
-			input = h('input.gc-input', {
+			input = h('input.r-input.r-input--number', {
 				type: 'number',
 				step: '0.00001',
 				oninput: onInput
@@ -264,25 +257,25 @@ const settingsFactory = (prop) =>
 			input.value = val;
 		}
 
-		return h('div.gc-setting',
-			h('label.gc-label', key),
+		return h('div.r-setting',
+			h('label.r-label', key),
 			input
 		);
 	});
 
-const settingsButton = h('button#gc-settings-button', {
+const settingsButton = h('button#r-btn--open', {
 	onclick () {
 		this.nextSibling.style.width = '350px';
 	}
 });
 
-const closeButton = h('a.gc-settings-menu.gc-close', {
+const closeButton = h('a.r-btn--close', {
 	onclick () {
 		this.parentNode.style.width = '0px';
 	}
 }, '×');
 
-const backgroundImageInput = h('input.gc-input', { 
+const backgroundImageInput = h('input.r-input.r-input--text', { 
 	type: 'text',
 	value: backgroundImage || '',
 	oninput () {
@@ -291,21 +284,21 @@ const backgroundImageInput = h('input.gc-input', {
 	}
 });
 
-const settingsMenu = h('div.gc-settings-menu.gc-container',
+const container = h('div#r-container',
 	closeButton,
-	h('h1.gc-title', 'RoadRayge Editor'),
-	h('h2.gc-title', 'Background Image'),
-	h('div.gc-setting',
-		h('label.gc-label', 'URL:'),
+	h('h1.r-heading--h1', 'RoadRayge Editor'),
+	h('h2.r-heading--h2', 'Background Image'),
+	h('div.r-setting',
+		h('label.r-label', 'URL:'),
 		backgroundImageInput
 	),
-	h('h2.gc-title', 'Graphical'),
+	h('h2.r-heading--h2', 'Graphical'),
 	...settingsFactory('graphical'),
-	h('h2.gc-title', 'GUI'),
+	h('h2.r-heading--h2', 'GUI'),
 	...settingsFactory('gui')
 );
 
-document.body.append(settingsButton, settingsMenu);
+document.body.append(settingsButton, container);
 
 /************************************************************************
 
@@ -317,25 +310,19 @@ document.body.append(settingsButton, settingsMenu);
 
 // Adds extra ways to close the container, such as with the esc key or by clicking outside the container
 (function containerClosingIIFE() {
-	// Relates to the stuff that we'd want to hide when the 'x' button is clicked
-	// The container is essentially the visual parts of RoadRayge minus the gear/x button
-	const containerCssSelector = '.gc-settings-menu.gc-container';
-	const containerElement = document.querySelector(containerCssSelector);
-
 	// closeContainer is taken from an onclick event string in the code above
-	const closeContainer = () => containerElement.style.width = '0px';
-	const isContainerOpen = () => (containerElement.style.width !== '0px');
+	const closeContainer = () => container.style.width = '0px';
+	const isContainerOpen = () => (container.style.width !== '0px');
 
 	// Close container when esc key pressed
 	document.addEventListener('keydown', e => {
-		if (e.key === 'Escape') {
-			closeContainer();
-		}
+		if (e.key === 'Escape') closeContainer();
 	});
+
+	const gameAreaWrapper = document.querySelector('div.gameAreaWrapper');
 
 	// Close container when click detected outside the window
 	document.addEventListener('click', e => {
-		const gameAreaWrapper = document.querySelector('div.gameAreaWrapper');
 		if (isContainerOpen() && gameAreaWrapper.contains(e.target)) {
 			closeContainer();
 		}
@@ -345,8 +332,8 @@ document.body.append(settingsButton, settingsMenu);
 // Prevents keyboard input in the container from interfering with the game's controls
 // for example, typing 'e' in the container shouldn't toggle autofire and typing 'wasd' shouldn't move your tank
 (function stopKeyboardPropagation() {
-	document.querySelectorAll('.gc-input').forEach((currentNode) => {
-		currentNode.addEventListener('keydown', e => {
+	document.querySelectorAll('.r-input').forEach(node => {
+		node.addEventListener('keydown', e => {
 			e.key !== 'Escape' && e.stopPropagation();
 		});
 	});
