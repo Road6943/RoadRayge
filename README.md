@@ -20,6 +20,7 @@ Fully customizable theme and graphics editor for [arras.io](https://arras.io/). 
 ---
 
 ## Screenshots
+<img width="1314" src="https://github.com/Road6943/RoadRayge/blob/main/RRscreenshot.png?raw=true">
 <img width="1215" alt="Home Page" src="https://user-images.githubusercontent.com/63924749/109587796-893f4f00-7abc-11eb-9c80-ffce058b5750.png">
 <img width="1314" alt="In-Game" src="https://user-images.githubusercontent.com/63924749/109587800-8ba1a900-7abc-11eb-9a0a-ac5bdcc23c44.png">
 
