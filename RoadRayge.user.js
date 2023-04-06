@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.3.0-alpha
+// @version      1.3.2-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -25,6 +25,10 @@ const clone = JSON.parse(JSON.stringify(arras));
 const settings = GM_getValue('settings', clone);
 const backgroundImage = GM_getValue('backgroundImage');
 
+// Adding cursor customization similar to bg image stuff
+const cursorStyleStorageKey = 'RR_cursor';
+const getCursorStyle = () => GM_getValue(cursorStyleStorageKey, 'auto');
+
 // Set and apply an `Arras()` setting
 const update = (prop, key, val) => {
 	settings[prop][key] = val;
@@ -44,6 +48,16 @@ if (backgroundImage) {
 	let style = `url(${backgroundImage}) center / cover no-repeat`;
 	document.body.style.background = style;
 }
+// Apply cursor style on start page
+applyCursorStyle(); 
+// Since textarea's don't load with a default value, set it here
+let cursorStyleTextareaValueInterval = setInterval(() => {
+	let cursorStyleTextarea = document.querySelector('#cursor-import-textarea');
+	if (cursorStyleTextarea) {
+		cursorStyleTextarea.value = getCursorStyle();
+		clearInterval(cursorStyleTextareaValueInterval);
+	}
+}, 1*1000);
 
 /*
  *  Source: https://gist.github.com/Ray-Adams/8c9a5ae29284f71c5a325b16aff510fc
@@ -143,6 +157,15 @@ GM_addStyle(`
 
 	#theme-import-input {
 		border-color: var(--slider-active);
+	}
+
+	/* like #cursor-import-textarea */
+	textarea {
+		border-color: var(--slider-active);
+		width: 85%;
+		font-size: 14px;
+		border-radius: 5px;
+		margin-left: 10px;
 	}
 
 	#gallery-container {
@@ -331,6 +354,7 @@ const settingsFactory = (prop, settingsObj=settings) =>
 const settingsButton = h('button#r-btn--open', {
 	onclick () {
 		this.nextSibling.style.width = '350px';
+		applyCursorStyle();
 	}
 });
 
@@ -349,6 +373,54 @@ const backgroundImageInput = h('input.r-input.r-input--text', {
 	}
 });
 
+// Applies the given cursorStyle to all the necessary elements
+function applyCursorStyle(cursorStyle=getCursorStyle()) {
+	// given an element, checks if it exists and applys cursor style if so
+	const acsHelper = elem => { if (elem) {elem.style.cursor = cursorStyle;} }
+	
+	// roadrayge container
+	acsHelper(document.querySelector('#r-container'))
+	// roadrayge labels
+	document.querySelectorAll('.r-label').forEach(acsHelper);
+	// if on arras landing page, modify cursor for these elements
+	acsHelper(document.querySelector('.startMenu')); // the central start menu
+	acsHelper(document.querySelector('.menuTabs')); // small bar above start menu
+	// landing page background + in-game everything
+	acsHelper(document.querySelector('iframe#game')?.contentDocument.body);
+}
+
+// Has to be a textarea since some cursor style lengths exceed the max text input length
+const cursorStyleInput = h('textarea.r-input.r-input--text#cursor-import-textarea', {
+	type: 'text',
+	list: 'cursorStyleList',
+	value: getCursorStyle(),
+	oninput () {
+		GM_setValue(cursorStyleStorageKey, this.value);
+		applyCursorStyle(this.value);
+	}
+});
+
+// Update: the datalist was replaced with a plain textarea
+// because most of the cursor styles exceeded max length of text input
+// ###
+// a datalist, so the text input can have some pre-suggested options
+const makeCursorOptions = values => values.map(value => h('option', {value}));
+const cursorStyleList = h('datalist#cursorStyleList', 
+	...makeCursorOptions([
+		'auto','crosshair','cell','all-scroll',
+		"/* Scope */ url('data:image/x-icon;base64,AAACAAEAICACAA8AEAAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAgAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAEQD/AAADgAAAA4AAAA/gAAAzmAAAwQYAAQEBAAIDgIAEAQBACAEAIAgDgCAQAQAQEAEAECAHwAggCCAI8kgknv/5P/7ySCSeIAggCCAHwAgQAQAQEAEAEAgDgCAIAQAgBAEAQAIDgIABAQEAAMEGAAAzmAAAD+AAAAOAAAADgAAAAAAA//x////8f///8B///8xn//8++f/+/v7//fx/f/v+/7/3/v/f9/x/3+/+/+/v/v/v3/g/99/33/cNt9thAAbAAQ2322Hf99/33/g/9+/+/+/v/v/v9/x/3/f+/9/7/v+//fx/f/7+/v//Pvn//8xn///wH////H////x///////8='), auto",
+		"/* Dice */ url('data:image/x-icon;base64,AAACAAEAICACAAsABwAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAgAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAwMCAAAAAAAAAAAAAAAAAAH//8ABAACgAQAAkAEAAIgBGAyIARgMiAEAAMgBAACYAQAAiAEBgIgBAYDIAQAAmAEAAIgBGAyIARgMyAEAAJgBAACIAf//yACEAigAQAAYACEBCAAf//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////////gAAP/7//1/+//9v/v//d/7n83f+5/N3/v//N/7//2f+//93/v5/d/7+fzf+//9n/v//d/7n83f+5/M3/v//Z/7//3f+AAA3/3v91/+//+f/3v73/+AAB/////////////////////////////////////8='), auto",
+		"/* Heart */ url('data:image/x-icon;base64,AAACAAEAICACAAYACQAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAgAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAD6AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAFAAAACIAAABBAAAAgIAAAQBAAAIAIAAEABAACAAIABAABAAgAAIAIAACACAAAgAgAAIAIAgCACAUAgAQIgQACEEIAAeA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////////////////f////r////3f///77///9/f//+/7///f/f//v/7//3//f/7//7/9///f/f//3/3//9/9///f/f9/3/3+v9/+/d+//3vvf/+H8P////////////////////////////////////////////////8='), auto",
+		'default','none','context-menu','help','pointer','progress','wait','text','vertical-text','alias','copy','move','no-drop','not-allowed','grab','grabbing','e-resize','n-resize','ne-resize','nw-resize','s-resize','se-resize','sw-resize','w-resize','ew-resize','ns-resize','nesw-resize','nwse-resize','col-resize','row-resize','zoom-in','zoom-out',
+
+		// You can get lots of cool cursors at cursors.cc
+		// this is what you'll need to copy and paste:
+		// url(...), auto
+		// the auto or other default at the end is mandatory, an optional description can be added /* LIKE THIS */ (same as css comment)
+		// I like this one: https://www.cursor.cc/?action=icon&file_id=176919#
+	])
+); // TODO add link to github wiki page telling users how to make/add custom cursor
+
 const container = h('div#r-container',
 	closeButton,
 	h('h1.r-heading--h1', 'RoadRayge Editor'),
@@ -356,6 +428,11 @@ const container = h('div#r-container',
 	h('div.r-setting',
 		h('label.r-label', 'URL:'),
 		backgroundImageInput
+	),
+	h('h2.r-heading--h2', 'Cursor'),
+	h('div.r-setting',
+		h('label.r-label', 'Cursor Style'),
+		cursorStyleInput, cursorStyleList
 	),
 	h('h2.r-heading--h2', 'Graphical'),
 	h('div#graphical-container',
@@ -389,16 +466,25 @@ document.body.append(settingsButton, container);
 
  ************************************************************************/
 
-// All code added below here will be wrapped in IIFE's or classes to allow for modularization and cleaner code separation
-
 // Adds extra ways to close the container, such as with the esc key or by clicking outside the container
-(function containerClosingIIFE() {
+// 	This cannot be run until the game is started, so it is launched alongside the themeColor stuff
+// 	in initThemeColorStuff()
+function addCloseContainerEventHandlers() {
+	const container = document.querySelector('#r-container');
+
 	// closeContainer is taken from an onclick event string in the code above
 	const closeContainer = () => container.style.width = '0px';
 	const isContainerOpen = () => (container.style.width !== '0px');
 
+	// This line below was causing issues in the past with the esc and outside click to close
+	// 	not working, it was because the iframe didn't have an inner canvas on arras load,
+	// 	it only appeared when the game was started
+	const canvas = document.querySelector('iframe#game')?.contentDocument.querySelector('canvas');
+	if (!canvas) return;
+
 	// Close container when esc key pressed
-	document.addEventListener('keydown', e => {
+	canvas.addEventListener('keydown', e => {
+		console.log(e);
 		if (e.key === 'Escape') closeContainer();
 	});
 
@@ -410,7 +496,7 @@ document.body.append(settingsButton, container);
 			closeContainer();
 		}
 	});
-})();
+}
 
 // Prevents keyboard input in the container from interfering with the game's controls
 // for example, typing 'e' in the container shouldn't toggle autofire and typing 'wasd' shouldn't move your tank
@@ -1015,6 +1101,9 @@ var initThemeColorStuff = function() {
 		}
 
 		realInitThemeColorStuff();
+		// this can't be run until game is entered, so I'm running it here
+		addCloseContainerEventHandlers();
+
 		clearInterval(checkIfThemeColorExistsInterval);
 	}, 1*1000)
 
@@ -1204,7 +1293,7 @@ function importTheme(themeToImport) {
 	console.log('Imported Theme has been parsed as:');
 	console.log(themeToImport)
 
-	// clear the import theme textarea
+	// clear the import theme input
 	document.querySelector("#theme-import-input").value = "";
 
 	// use the js object to change the game's colors
