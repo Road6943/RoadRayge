@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.3.4-alpha
+// @version      1.3.5-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -676,6 +676,8 @@ var defaultSavedThemes = [
 	,
 	{"themeDetails":{"name":"Gruvbox","author":"Road"},"config":{"graphical":{"screenshotMode":false,"borderChunk":6,"barChunk":5,"compensationScale":1.114,"lowGraphics":false,"alphaAnimations":true,"inversedRender":true,"miterStars":true,"miter":false,"fontSizeOffset":0,"shieldbars":false,"renderGrid":true,"darkBorders":false,"neon":false,"coloredNest":false},"gui":{"enabled":true,"alcoveSize":200,"spacing":20},"themeColor":{"table":["#83a598","#8ec07c","#d65d0e","#d79920","#d3869b","#d3869b","#bdae93","#aa9f9e","#ebddd2","#000000","#458588","#98971a","#cc241d","#d79920","#417b58","#b16186","#928374","#000000","#282828","#000000"],"border":"0.6"}}}
 	,
+	{"themeDetails":{"name":"Bocchi The Rock","author":"Road"},"config":{"graphical":{"darkBorders":false,"neon":false,"coloredNest":false,"renderGrid":true,"shieldbars":false,"miter":false,"renderNames":true,"renderScores":false,"renderHealth":true,"reducedInfo":false,"censorNames":false,"alphaAnimations":true,"borderChunk":6,"alternateBorder":false},"gui":{"enabled":true,"scale":1,"alcoveSize":200,"spacing":20,"leaderboard":true,"barChunk":5},"themeColor":{"table":["#b0cc11","#53caea","#53caea","#b0ccc1","#f2e5f9","#b0ccc1","#b0ccc1","#242858","#ffffff","#000000","#345a97","#f8e35d","#e74932","#bb7f36","#6b354d","#fcc2cb","#839496","#b0ccc1","#000000","#ffd6d6"],"border":0.5}}}
+	,
 	{"themeDetails":{"name":"Depths","author":"Skrialik"},"config":{"graphical":{"screenshotMode":false,"borderChunk":6,"barChunk":5,"compensationScale":1.114,"lowGraphics":false,"alphaAnimations":true,"inversedRender":true,"miterStars":true,"miter":false,"fontSizeOffset":0,"shieldbars":false,"renderGrid":true,"darkBorders":false,"neon":false,"coloredNest":false},"gui":{"enabled":true,"alcoveSize":200,"spacing":20},"themeColor":{"table":["#fec700","#b51a00","#ffdbd8","#573400","#b58efd","#cde9b5","#cbf1ff","#aa9f9e","#ffffff","#000000","#002e7a","#375719","#000000","#fff2d5","#f4a4c0","#561029","#c1c1c1","#7a7a7a","#434343","#ffffff"],"border":0.7019607843137254}}}
 	,
 
@@ -1328,62 +1330,67 @@ function applyTheme(themeObj) {
 // this function only converts an imported theme string into a js object mirroring this.config/the game's Arras() object
 // but importTheme calls a different function (applyTheme) that will take in a theme obj and change the game's visual properties
 function importTheme(themeToImport) {
-	themeToImport = themeToImport.trim();
+	try {
+		themeToImport = themeToImport.trim();
 
-	if (themeToImport === '') {
-		console.log('no theme provided for import')
-		return;
-	}
-
-	// Tiger themes start with TIGER, and then _<datatype>, e.g. TIGER_JSON{valid json here}
-	if (themeToImport.startsWith('TIGER')) {
-		if (themeToImport.startsWith('TIGER_JSON')) {
-			// remove TIGER_JSON from start of string
-			themeToImport = themeToImport.substring( 'TIGER_JSON'.length );
-			themeToImport = JSON.parse(themeToImport);
+		if (themeToImport === '') {
+			console.log('no theme provided for import')
+			return;
 		}
+
+		// Tiger themes start with TIGER, and then _<datatype>, e.g. TIGER_JSON{valid json here}
+		if (themeToImport.startsWith('TIGER')) {
+			if (themeToImport.startsWith('TIGER_JSON')) {
+				// remove TIGER_JSON from start of string
+				themeToImport = themeToImport.substring( 'TIGER_JSON'.length );
+				themeToImport = JSON.parse(themeToImport);
+			}
+			else {
+				console.log('invalid tiger theme format')
+			}
+		}
+		// standard arras theme, either base64 or normal JSON
+		// use functions provided by CX to handle these
 		else {
-			console.log('invalid tiger theme format')
-		}
-	}
-	// standard arras theme, either base64 or normal JSON
-	// use functions provided by CX to handle these
-	else {
-		themeToImport = parseArrasTheme(themeToImport);
+			themeToImport = parseArrasTheme(themeToImport);
 
-		var newTheme = {
-			themeDetails: {
-				name: themeToImport.name,
-				author: themeToImport.author,
-			},
-			config: {
-				themeColor: {
-					border: themeToImport.content.border,
-					table: [],
+			var newTheme = {
+				themeDetails: {
+					name: themeToImport.name,
+					author: themeToImport.author,
 				},
-			},
+				config: {
+					themeColor: {
+						border: themeToImport.content.border,
+						table: [],
+					},
+				},
+			}
+
+			// add colors
+			for (var colorName of colorNames) {
+				var importedColorNameValue = themeToImport.content[colorName];
+				(newTheme.config.themeColor.table).push( importedColorNameValue );
+			}
+
+			// put the correctly formatted js object back into the themeToImport variable
+			// to match the other branches of the if statement
+			themeToImport = newTheme;
 		}
 
-		// add colors
-		for (var colorName of colorNames) {
-			var importedColorNameValue = themeToImport.content[colorName];
-			(newTheme.config.themeColor.table).push( importedColorNameValue );
-		}
+		/* At this point, themeToImport should contain a js object mirroring the structure of this.config */
+		console.log('Imported Theme has been parsed as:');
+		console.log(themeToImport)
 
-		// put the correctly formatted js object back into the themeToImport variable
-		// to match the other branches of the if statement
-		themeToImport = newTheme;
+		// clear the import theme input
+		document.querySelector("#theme-import-input").value = "";
+
+		// use the js object to change the game's colors
+		applyTheme(themeToImport);
+	} catch (error) {
+		console.error('theme importing failed');
+		console.error(error);
 	}
-
-	/* At this point, themeToImport should contain a js object mirroring the structure of this.config */
-	console.log('Imported Theme has been parsed as:');
-	console.log(themeToImport)
-
-	// clear the import theme input
-	document.querySelector("#theme-import-input").value = "";
-
-	// use the js object to change the game's colors
-	applyTheme(themeToImport);
 }
 
 // Thank you to CX for providing this:
