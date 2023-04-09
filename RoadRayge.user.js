@@ -49,7 +49,7 @@ if (backgroundImage) {
 	document.body.style.background = style;
 }
 // Apply cursor style on start page
-applyCursorStyle(); 
+applyCursorStyle();
 // Since textarea's don't load with a default value, set it here
 let cursorStyleTextareaValueInterval = setInterval(() => {
 	let cursorStyleTextarea = document.querySelector('#cursor-import-textarea');
@@ -364,7 +364,7 @@ const closeButton = h('a.r-btn--close', {
 	}
 }, '×');
 
-const backgroundImageInput = h('input.r-input.r-input--text', { 
+const backgroundImageInput = h('input.r-input.r-input--text', {
 	type: 'text',
 	value: backgroundImage || '',
 	oninput () {
@@ -387,11 +387,11 @@ function applyCursorStyle(cursorStyle=getCursorStyle()) {
 	if (endIndex === -1) {
 		endIndex = cursorStyle.length;
 	}
-	cursorStyle = cursorStyle.substring(startIndex, endIndex); 
+	cursorStyle = cursorStyle.substring(startIndex, endIndex);
 
 	// given an element, checks if it exists and applys cursor style if so
 	const acsHelper = elem => { if (elem) {elem.style.cursor = cursorStyle;} }
-	
+
 	// roadrayge container
 	acsHelper(document.querySelector('#r-container'))
 	// roadrayge labels
@@ -446,11 +446,11 @@ const container = h('div#r-container',
 
 	//themeColor stuff, empty at first b/c themeColor doesn't exist until game starts
 	h('h2.r-heading--h2', 'Colors'),
-	h('div#colors-container', 
+	h('div#colors-container',
 		h('center.r-label', 'You must be in-game to use this!')
 	),
 	h('h2.r-heading--h2', 'Misc.'),
-	h('div#misc-container', 
+	h('div#misc-container',
 		h('center.r-label', 'You must be in-game to use this!')
 	),
 	h('h2.r-heading--h2', 'Gallery'),
@@ -549,7 +549,7 @@ const buttonClickStartTime = {
 
 // colorNames is an array of the names of the colors in the array at Arras().themeColor.table, in the same order
 // must be var to avoid 'cannot access before initialization' error
-// need a hoisted version as otherwise the editor will not build on game start 
+// need a hoisted version as otherwise the editor will not build on game start
 // 		(since functions are hoisted above var-variables so var's are undefined when very first func runs)
 HOISTED.colorNames = ["teal","lgreen","orange","yellow","lavender","pink","vlgrey","lgrey","guiwhite","black","blue","green","red","gold","purple","magenta","grey","dgrey","white","guiblack"];
 var colorNames = HOISTED.colorNames;
@@ -597,9 +597,9 @@ const colorDescriptions = [
 		, "guiblack"],
 	["Text Color"
 		, "guiwhite"],
-	
+
 	/* Teams */
-	["Your tank in FFA, Left team in 2TDM, Top left team in 4TDM" 
+	["Your tank in FFA, Left team in 2TDM, Top left team in 4TDM"
 		, "blue"],
 	["Enemy tanks in FFA, Bottom left team in 4TDM"
 		, "red"],
@@ -607,7 +607,7 @@ const colorDescriptions = [
 		, "green"],
 	["Bottom right team in 4TDM"
 		, "magenta"],
-	
+
 	/* Shapes */
 	["Rocks, Barrels, Bar Backgrounds"
 		, "grey"],
@@ -735,7 +735,7 @@ function updateThemeDetails(prop, newVal) {
 
 
 function addThemeToGallery(
-	arrasObj = unsafeWindow.Arras(), 
+	arrasObj = unsafeWindow.Arras(),
 	themeDetails = JSON.parse(GM_getValue(themeDetailsStorageKey))
 ) {
 	if (!themeDetails.name) {
@@ -748,10 +748,10 @@ function addThemeToGallery(
 	const config = JSON.parse(JSON.stringify(arrasObj));
 	// universal source of truth for gallery is storage's savedThemesStorageKey
 	const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
-	
+
 	// modify savedThemes, add to start of array so it shows up on top
 	savedThemes.unshift({themeDetails, config});
-	
+
 	// rerender gallery elements
 	buildGallerySection(savedThemes);
 	// resave to storage
@@ -761,10 +761,10 @@ function addThemeToGallery(
 function deleteThemeFromGallery(themeIndexInSavedThemes) {
 	// universal source of truth for gallery is storage's savedThemesStorageKey
 	const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
-	
+
 	// modify savedThemes
 	savedThemes.splice(themeIndexInSavedThemes, 1);
-	
+
 	// rerender gallery elements
 	buildGallerySection(savedThemes);
 	// resave to storage
@@ -829,7 +829,7 @@ function buildMiscSection(themeColorObj, themeDetailsObj) {
 
 	// theme name and author
 	const themeDetailsElements = [
-		h('div.r-setting', 
+		h('div.r-setting',
 			h('label.r-label', 'Theme Name'),
 			h('input.r-input.r-input--text', {
 				type: 'text',
@@ -839,7 +839,7 @@ function buildMiscSection(themeColorObj, themeDetailsObj) {
 				}
 			})
 		),
-		h('div.r-setting', 
+		h('div.r-setting',
 			h('label.r-label', 'Theme Author'),
 			h('input.r-input.r-input--text', {
 				type: 'text',
@@ -852,31 +852,31 @@ function buildMiscSection(themeColorObj, themeDetailsObj) {
 	];
 
 	const exportThemeElements = [
-		h('div.r-setting', 
+		h('div.r-setting',
 			h('div.r-btn--standard#export-tiger_json-btn', {
 				onclick () {
 					exportTheme('TIGER_JSON');
 				}
 			}, 'Export Tiger Theme')
 		),
-		h(`div.r-setting.r-description`, 
+		h(`div.r-setting.r-description`,
 			"Best Option. Includes everything. Only works with RoadRayge and Tiger (Theme In-Game Editor)."
 		),
 
-		h('div.r-setting', 
+		h('div.r-setting',
 			h('div.r-btn--standard#export-bc-btn', {
 				onclick () {
 					exportTheme('backwardsCompatible');
 				}
 			}, 'Export Backwards-Compatible Theme')
 		),
-		h(`div.r-setting.r-description`, 
+		h(`div.r-setting.r-description`,
 			"Can be used with Arras.io's custom theme input. Only has colors & border. DOES NOT INCLUDE ANY GRAPHICAL OR GUI PROPERTIES."
 		)
 	];
 
 	const importThemeElements = [
-		h('div.r-setting', 
+		h('div.r-setting',
 			h('label.r-label', "Import Theme"),
 			h('input.r-input.r-input--text#theme-import-input', {
 				type: 'text',
@@ -887,11 +887,11 @@ function buildMiscSection(themeColorObj, themeDetailsObj) {
 				}
 			})
 		),
-		h(`div.r-setting.r-description`, 
+		h(`div.r-setting.r-description`,
 			"All theme types can be imported")
 	];
 
-	const saveCurrentThemeElements = h('div.r-setting', 
+	const saveCurrentThemeElements = h('div.r-setting',
 		h('div.r-btn--standard#save-to-gallery-btn', {
 			onmousedown () {
 				buttonClickStartTime.saveCurrentTheme = performance.now();
@@ -911,7 +911,7 @@ function buildMiscSection(themeColorObj, themeDetailsObj) {
 		h('br'),
 		h('div.r-setting',
 			h('label.r-label', "Swap Colors"),
-			h('input.r-input.r-input--text#swap-colors-input', { 
+			h('input.r-input.r-input--text#swap-colors-input', {
 				type: 'text',
 				value: '',
 				placeholder: 'Enter swaps'
@@ -930,23 +930,23 @@ function buildMiscSection(themeColorObj, themeDetailsObj) {
 				}
 			}
 		}, 'Hold For 3s To Swap'),
-		h(`div.r-setting.r-description`, 
+		h(`div.r-setting.r-description`,
 			"Use this format: red/blue pink/gold red/grey "
 			+ "Also try 1st & last letter: rd/be pk/gd rd/gy"
 		),
 	];
 
-	
+
 	appendElementsToContainer(
-		"#misc-container", 
-		[ 
-			borderElements, 
-			...themeDetailsElements, 
+		"#misc-container",
+		[
+			borderElements,
+			...themeDetailsElements,
 			saveCurrentThemeElements,
-			...importThemeElements, 
-			...exportThemeElements, 
+			...importThemeElements,
+			...exportThemeElements,
 			...swapColorsElements,
-		], 
+		],
 		true
 	);
 }
@@ -957,12 +957,12 @@ function swapColors() {
 
 	const swapColorsStr = document.querySelector("#swap-colors-input").value;
 	const swaps = swapColorsStr.trim().split(/\s+/); // split on whitespace
-	
+
 	for (const swap of swaps) {
 		// skip to next pair if there's not exactly 2 colors in current pair
 		// the pair should look like "red/blue"
 		let colorsToSwap = swap.split("/");
-		if (colorsToSwap.length !== 2) { 
+		if (colorsToSwap.length !== 2) {
 			continue;
 		}
 
@@ -976,9 +976,9 @@ function swapColors() {
 		})
 
 		const [firstColor, secondColor] = colorsToSwap;
-		
+
 		// skip to next pair if either color in current pair is invalid
-		if (!(firstColor in colorNameToIndex) || !(secondColor in colorNameToIndex)) { 
+		if (!(firstColor in colorNameToIndex) || !(secondColor in colorNameToIndex)) {
 			continue;
 		}
 
@@ -989,6 +989,8 @@ function swapColors() {
 		newThemeColors[secondColorIndex] = oldThemeColors[firstColorIndex];
 		Arras().themeColor.table = newThemeColors;
 	}
+
+	buildColorsSection(Arras().themeColor);
 }
 
 // Build the section that contains the color pickers, color descriptions, border input, theme details
@@ -998,7 +1000,7 @@ function buildColorsSection(themeColorObj) {
 	const colorsElements = [];
 	for (const [description, colorName] of colorDescriptions) {
 		colorsElements.push(
-			h(`div.r-setting#${colorName}-container`, 
+			h(`div.r-setting#${colorName}-container`,
 				h(`label.r-label#${colorName}-label`, colorName),
 				h(`input.r-input.r-input--color#${colorName}-picker`, {
 					type: 'color',
@@ -1008,14 +1010,14 @@ function buildColorsSection(themeColorObj) {
 					}
 				})
 			),
-			h(`div.r-setting.r-description#${colorName}-description`, 
+			h(`div.r-setting.r-description#${colorName}-description`,
 				colorName + " is used for " + description)
 		)
 	}
 
 	appendElementsToContainer(
-		"#colors-container", 
-		colorsElements, 
+		"#colors-container",
+		colorsElements,
 		true
 	);
 }
@@ -1049,7 +1051,7 @@ function buildGallerySection(savedThemesArr) {
 		const sharedTankBodyAttrs = { r:20, "stroke-width":3 };
 
 		galleryElements.push(
-			h('center.r-label', 
+			h('center.r-label',
 				savedTheme.themeDetails.name
 				+ ' by: ' + savedTheme.themeDetails.author
 			),
@@ -1171,7 +1173,7 @@ function buildGallerySection(savedThemesArr) {
 		galleryElements.push(
 			svg,
 			h('hr.gallery-divider')
-		);	
+		);
 
 	}
 
@@ -1226,14 +1228,14 @@ var initThemeColorStuff = function() {
 
 // export a theme as either a 'tiger' theme (using json format) or 'arras' theme (json format, only contains themeColor changes)
 function exportTheme(
-	type, 
-	arrasObj = unsafeWindow.Arras(), 
+	type,
+	arrasObj = unsafeWindow.Arras(),
 	themeDetailsObj = JSON.parse(GM_getValue(themeDetailsStorageKey))
 ) {
 	var themeToExport = {};
 
 	// 'tiger' themes are purposefully incompatible with 'arras' themes because we don't want people who are not familiar with tiger
-	// to become confused why a theme they got/found from someone else doesn't seem to work properly 
+	// to become confused why a theme they got/found from someone else doesn't seem to work properly
 	// (as the default arras custom theme input would only change colors and border, not any of the other graphical/gui properties)
 	// tiger themes look like this:
 	// TIGER_JSON{/* valid JSON */}
@@ -1277,7 +1279,7 @@ function exportTheme(
 
 // takes in a themeObj, and changes the games visual properties using it
 // themeObj is basically the same format as Arras()
-// be careful not to simply assign this.config to a new object, 
+// be careful not to simply assign this.config to a new object,
 // because that will remove it being a reference to the actual game's Arras() object
 // similarly, you can only directly change the atomic properties + arrays (not objects)
 function applyTheme(themeObj) {
@@ -1291,7 +1293,7 @@ function applyTheme(themeObj) {
 	}
 
 	const { config } = newTheme;
-	
+
 	// apply settings to game's Arras() obj
 	for (let prop in config) {
 		if (prop === "themeColor") {
@@ -1303,7 +1305,7 @@ function applyTheme(themeObj) {
 			}
 
 		// graphical, gui
-		} else { 
+		} else {
 			for (let [key,val] of Object.entries(config[prop])) {
 				update(prop, key, val);
 			}
@@ -1312,7 +1314,7 @@ function applyTheme(themeObj) {
 
 	// change controls in RoadRayge by re-rendering ui
 	appendElementsToContainer(
-		"#graphical-container", 
+		"#graphical-container",
 		settingsFactory("graphical", unsafeWindow.Arras()),
 		true
 	);
@@ -1322,12 +1324,12 @@ function applyTheme(themeObj) {
 		true
 	);
 	buildMiscSection(
-		unsafeWindow.Arras().themeColor, 
+		unsafeWindow.Arras().themeColor,
 		JSON.parse(GM_getValue(themeDetailsStorageKey))
 	);
 	buildColorsSection(unsafeWindow.Arras().themeColor);
 
-	// run this only after themeColor stuff is made 
+	// run this only after themeColor stuff is made
 	// or else it won't affect themeColor stuff
 	stopKeyboardPropagation();
 }
@@ -1502,7 +1504,7 @@ function parseArrasTheme(string){
 	} catch (e) {}
 
 	return null
-} 
+}
 
 
 
