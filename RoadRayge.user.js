@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.3.2-alpha
+// @version      1.3.3-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -375,6 +375,20 @@ const backgroundImageInput = h('input.r-input.r-input--text', {
 
 // Applies the given cursorStyle to all the necessary elements
 function applyCursorStyle(cursorStyle=getCursorStyle()) {
+	/* handle cursor.cc html inputs */
+	// remove everything before "url"
+	let startIndex = cursorStyle.indexOf("url");
+	// if not present, start at very beginning
+	if (startIndex === -1) {
+		startIndex = 0;
+	}
+	// remove the last ; and everything after it
+	let endIndex = cursorStyle.lastIndexOf(";");
+	if (endIndex === -1) {
+		endIndex = cursorStyle.length;
+	}
+	cursorStyle = cursorStyle.substring(startIndex, endIndex); 
+
 	// given an element, checks if it exists and applys cursor style if so
 	const acsHelper = elem => { if (elem) {elem.style.cursor = cursorStyle;} }
 	
@@ -393,33 +407,13 @@ function applyCursorStyle(cursorStyle=getCursorStyle()) {
 const cursorStyleInput = h('textarea.r-input.r-input--text#cursor-import-textarea', {
 	type: 'text',
 	list: 'cursorStyleList',
+	placeholder: 'Enter a cursor style like crosshair',
 	value: getCursorStyle(),
 	oninput () {
 		GM_setValue(cursorStyleStorageKey, this.value);
 		applyCursorStyle(this.value);
 	}
 });
-
-// Update: the datalist was replaced with a plain textarea
-// because most of the cursor styles exceeded max length of text input
-// ###
-// a datalist, so the text input can have some pre-suggested options
-const makeCursorOptions = values => values.map(value => h('option', {value}));
-const cursorStyleList = h('datalist#cursorStyleList', 
-	...makeCursorOptions([
-		'auto','crosshair','cell','all-scroll',
-		"/* Scope */ url('data:image/x-icon;base64,AAACAAEAICACAA8AEAAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAgAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAEQD/AAADgAAAA4AAAA/gAAAzmAAAwQYAAQEBAAIDgIAEAQBACAEAIAgDgCAQAQAQEAEAECAHwAggCCAI8kgknv/5P/7ySCSeIAggCCAHwAgQAQAQEAEAEAgDgCAIAQAgBAEAQAIDgIABAQEAAMEGAAAzmAAAD+AAAAOAAAADgAAAAAAA//x////8f///8B///8xn//8++f/+/v7//fx/f/v+/7/3/v/f9/x/3+/+/+/v/v/v3/g/99/33/cNt9thAAbAAQ2322Hf99/33/g/9+/+/+/v/v/v9/x/3/f+/9/7/v+//fx/f/7+/v//Pvn//8xn///wH////H////x///////8='), auto",
-		"/* Dice */ url('data:image/x-icon;base64,AAACAAEAICACAAsABwAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAgAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAwMCAAAAAAAAAAAAAAAAAAH//8ABAACgAQAAkAEAAIgBGAyIARgMiAEAAMgBAACYAQAAiAEBgIgBAYDIAQAAmAEAAIgBGAyIARgMyAEAAJgBAACIAf//yACEAigAQAAYACEBCAAf//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////////////////gAAP/7//1/+//9v/v//d/7n83f+5/N3/v//N/7//2f+//93/v5/d/7+fzf+//9n/v//d/7n83f+5/M3/v//Z/7//3f+AAA3/3v91/+//+f/3v73/+AAB/////////////////////////////////////8='), auto",
-		"/* Heart */ url('data:image/x-icon;base64,AAACAAEAICACAAYACQAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAgAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAD6AAAAAAAAAAAAAAAAAAAAAAAAAIAAAAFAAAACIAAABBAAAAgIAAAQBAAAIAIAAEABAACAAIABAABAAgAAIAIAACACAAAgAgAAIAIAgCACAUAgAQIgQACEEIAAeA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////////////////////////f////r////3f///77///9/f//+/7///f/f//v/7//3//f/7//7/9///f/f//3/3//9/9///f/f9/3/3+v9/+/d+//3vvf/+H8P////////////////////////////////////////////////8='), auto",
-		'default','none','context-menu','help','pointer','progress','wait','text','vertical-text','alias','copy','move','no-drop','not-allowed','grab','grabbing','e-resize','n-resize','ne-resize','nw-resize','s-resize','se-resize','sw-resize','w-resize','ew-resize','ns-resize','nesw-resize','nwse-resize','col-resize','row-resize','zoom-in','zoom-out',
-
-		// You can get lots of cool cursors at cursors.cc
-		// this is what you'll need to copy and paste:
-		// url(...), auto
-		// the auto or other default at the end is mandatory, an optional description can be added /* LIKE THIS */ (same as css comment)
-		// I like this one: https://www.cursor.cc/?action=icon&file_id=176919#
-	])
-); // TODO add link to github wiki page telling users how to make/add custom cursor
 
 const container = h('div#r-container',
 	closeButton,
@@ -432,7 +426,14 @@ const container = h('div#r-container',
 	h('h2.r-heading--h2', 'Cursor'),
 	h('div.r-setting',
 		h('label.r-label', 'Cursor Style'),
-		cursorStyleInput, cursorStyleList
+		cursorStyleInput
+	),
+	h(`a.r-setting.r-description`, {
+		href: "https://github.com/Road6943/RoadRayge/blob/main/notes/cursor-info.md",
+		target: "_blank", // opens in new tab
+		rel: "noopener noreferrer",
+	},
+		"Click To Learn More!"
 	),
 	h('h2.r-heading--h2', 'Graphical'),
 	h('div#graphical-container',
@@ -473,7 +474,7 @@ function addCloseContainerEventHandlers() {
 	const container = document.querySelector('#r-container');
 
 	// closeContainer is taken from an onclick event string in the code above
-	const closeContainer = () => container.style.width = '0px';
+	const closeContainer = () => {container.style.width = '0px'};
 	const isContainerOpen = () => (container.style.width !== '0px');
 
 	// This line below was causing issues in the past with the esc and outside click to close
@@ -543,14 +544,39 @@ var savedThemesStorageKey = "RR_savedThemes";
 const buttonClickStartTime = {
 	deleteTheme: Infinity,
 	saveCurrentTheme: Infinity,
+	swapColors: Infinity,
 }
 
 // colorNames is an array of the names of the colors in the array at Arras().themeColor.table, in the same order
 // must be var to avoid 'cannot access before initialization' error
 // need a hoisted version as otherwise the editor will not build on game start 
 // 		(since functions are hoisted above var-variables so var's are undefined when very first func runs)
-HOISTED.colorNames = ["teal","lgreen","orange","yellow","lavender","pink","vlgrey","lgrey","guiwhite","black","blue","green","red","gold","purple","magenta","grey","dgrey","white","guiblack"]
+HOISTED.colorNames = ["teal","lgreen","orange","yellow","lavender","pink","vlgrey","lgrey","guiwhite","black","blue","green","red","gold","purple","magenta","grey","dgrey","white","guiblack"];
 var colorNames = HOISTED.colorNames;
+
+// first+last letter of color name
+const colorAbbreviations = {
+	tl: "teal",
+	ln: "lgreen",
+	oe: "orange",
+	yw: "yellow",
+	lr: "lavender",
+	pk: "pink",
+	vy: "vlgrey",
+	ly: "lgrey",
+	ge: "guiwhite",
+	bk: "black",
+	be: "blue",
+	gn: "green",
+	rd: "red",
+	gd: "gold",
+	pe: "purple",
+	ma: "magenta",
+	gy: "grey",
+	dy: "dgrey",
+	we: "white",
+	gk: "guiblack",
+};
 
 // quickly allows conversion between a colorName and its index in the colorNames array
 const colorNameToIndex = {};
@@ -881,20 +907,89 @@ function buildMiscSection(themeColorObj, themeDetailsObj) {
 		}, 'Hold For 3s To Save Current Theme To Gallery')
 	);
 
+	const swapColorsElements = [
+		h('br'),
+		h('div.r-setting',
+			h('label.r-label', "Swap Colors"),
+			h('input.r-input.r-input--text#swap-colors-input', { 
+				type: 'text',
+				value: '',
+				placeholder: 'Enter swaps'
+			}),
+		),
+		h('div.r-btn--standard#swap-colors-btn', {
+			onmousedown () {
+				buttonClickStartTime.swapColors = performance.now();
+			},
+			onmouseup () {
+				// perforance.now uses milliseconds, so we divide by 1000 to convert to seconds
+				const timeButtonWasHeldFor = (performance.now() - buttonClickStartTime.swapColors) / 1000;
+				if (timeButtonWasHeldFor >= 3) {
+					swapColors();
+					temporarilyChangeText('#swap-colors-btn', 'Swapped!')
+				}
+			}
+		}, 'Hold For 3s To Swap'),
+		h(`div.r-setting.r-description`, 
+			"Use this format: red/blue pink/gold red/grey "
+			+ "Also try 1st & last letter: rd/be pk/gd rd/gy"
+		),
+	];
+
 	
 	appendElementsToContainer(
 		"#misc-container", 
-		[
+		[ 
 			borderElements, 
 			...themeDetailsElements, 
 			saveCurrentThemeElements,
 			...importThemeElements, 
 			...exportThemeElements, 
+			...swapColorsElements,
 		], 
 		true
 	);
 }
 
+function swapColors() {
+	const oldThemeColors = [...Arras().themeColor.table]; // copy themeColor array
+	const newThemeColors = [...oldThemeColors];
+
+	const swapColorsStr = document.querySelector("#swap-colors-input").value;
+	const swaps = swapColorsStr.trim().split(/\s+/); // split on whitespace
+	
+	for (const swap of swaps) {
+		// skip to next pair if there's not exactly 2 colors in current pair
+		// the pair should look like "red/blue"
+		let colorsToSwap = swap.split("/");
+		if (colorsToSwap.length !== 2) { 
+			continue;
+		}
+
+		// format colors a bit
+		colorsToSwap = colorsToSwap.map(color => {
+			// replace abbreviation with full name
+			if (color in colorAbbreviations) {
+				color = colorAbbreviations[color];
+			}
+			return color.trim();
+		})
+
+		const [firstColor, secondColor] = colorsToSwap;
+		
+		// skip to next pair if either color in current pair is invalid
+		if (!(firstColor in colorNameToIndex) || !(secondColor in colorNameToIndex)) { 
+			continue;
+		}
+
+		// do the actual color swapping
+		const firstColorIndex = colorNameToIndex[firstColor];
+		const secondColorIndex = colorNameToIndex[secondColor];
+		newThemeColors[firstColorIndex] = oldThemeColors[secondColorIndex];
+		newThemeColors[secondColorIndex] = oldThemeColors[firstColorIndex];
+		Arras().themeColor.table = newThemeColors;
+	}
+}
 
 // Build the section that contains the color pickers, color descriptions, border input, theme details
 // using the passed-in themeColorObj and themeDetailsObj
