@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.3.7-alpha
+// @version      1.3.8-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -1071,6 +1071,19 @@ function s(tagName, attrs={}, textContent=null) {
 
 function buildGallerySection(savedThemesArr) {
 	const galleryElements = [];
+
+	// Add link to themes discord
+	galleryElements.push(
+		h(`a.r-setting.r-description`, {
+			href: "https://discord.gg/DH2DP8JPhP",
+			target: "_blank", // opens in new tab
+			rel: "noopener noreferrer",
+		},
+			"View More Themes"
+		),
+		h('hr.gallery-divider')
+	)
+
 	for (let idx = 0; idx < savedThemesArr.length; idx++) {
 		const savedTheme = savedThemesArr[idx];
 		let tcTable = savedTheme.config.themeColor.table;
