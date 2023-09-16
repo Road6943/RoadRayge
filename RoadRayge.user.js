@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.3.8-alpha
+// @version      1.3.9-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -179,6 +179,10 @@ GM_addStyle(`
 		margin: 10px;
 	}
 
+	#filter-themes-description {
+		margin: 25px;
+	}
+
 	/* make the svg text more visible and reflective of its in-game look */
 	svg text {
 		font-family: Ubuntu, sans-serif;
@@ -193,7 +197,6 @@ GM_addStyle(`
 		border: 1px solid var(--slider-active);
 		border-radius: 5%;
 	}
-
 
 	#r-container {
 		display: block;
@@ -799,6 +802,55 @@ function deleteThemeFromGallery(themeIndexInSavedThemes) {
 	GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 }
 
+function updateThemeKeywords(themeIndexInSavedThemes, newKeywords) {
+	// universal source of truth for gallery is storage's savedThemesStorageKey
+	const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+
+	// modify savedThemes
+	savedThemes[themeIndexInSavedThemes].themeDetails.keywords = newKeywords;
+
+	// resave to storage
+	GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
+}
+
+// Filter the Gallery section to only show the themes
+// with a matching value in themeDetails
+function filterSavedThemes(searchQuery) {
+	// universal source of truth for gallery is storage's savedThemesStorageKey
+	const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+
+	// blank search means return all saved themes
+	if (searchQuery.trim() === "") {
+		return savedThemes;
+	}
+
+	// search query is a string, its either a single query or multiple queries separated by a comma
+	const queriesToSearchForArr = searchQuery
+		.split(',')
+		.map(query => query.toLowerCase().trim())
+		.filter(query => query.length > 0);
+	
+	// find themes whose themeDetails matches search query
+	const filteredThemes = [];
+	for (const savedTheme of savedThemes) {
+		// iterate over every value in themeDetails
+		for (let val of Object.values(savedTheme.themeDetails)) {
+			val = val.toLowerCase();
+
+			// iterate over all possible search queries
+			// check if any search query matches any value in themeDetails
+			if (queriesToSearchForArr.some(query => val.includes(query))) {
+				// if there's a match, then add the theme to the filtered array
+				// and then break to move to next theme without checking rest of themeDetails vals
+				filteredThemes.push(savedTheme);
+				break;
+			}
+		}
+	}
+
+	return filteredThemes;
+}
+
 
 // import an external javascript file
 // to import CSS, use `@resource {varToDumpCSSIn} {urlOfExternalStyleSheet}`
@@ -1069,18 +1121,43 @@ function s(tagName, attrs={}, textContent=null) {
 	return element;
 }
 
-function buildGallerySection(savedThemesArr) {
+function buildGallerySection(savedThemesArr, options={}) {
 	const galleryElements = [];
 
 	// Add link to themes discord
 	galleryElements.push(
+		// Themes Discord Link
 		h(`a.r-setting.r-description`, {
 			href: "https://discord.gg/DH2DP8JPhP",
 			target: "_blank", // opens in new tab
 			rel: "noopener noreferrer",
 		},
 			"View More Themes"
+		)
+	);
+
+	// Variables to use in push call below
+	const filterThemesValueKey = 'filterThemesValue';
+	galleryElements.push(
+		// Filter Themes
+		h('div.r-setting', 
+			h('label.r-label', 'Filter Themes:'),
+			h('input.r-input.r-input--text#filter-themes-input', {
+				type: 'text',
+				placeholder: 'Separate,With,Comma',
+				value: options[filterThemesValueKey] || '',
+				onchange () {
+					buildGallerySection(
+						filterSavedThemes(this.value), 
+						{ [filterThemesValueKey]: this.value }
+					);
+				}
+			})
 		),
+
+		h(`div.r-setting.r-description#filter-themes-description`, 
+				'Click outside textbox to search. Do multiple simultaneous searches by separating them with a comma.'),
+
 		h('hr.gallery-divider')
 	)
 
@@ -1092,10 +1169,13 @@ function buildGallerySection(savedThemesArr) {
 		const sharedTankBodyAttrs = { r:20, "stroke-width":3 };
 
 		galleryElements.push(
+			// Theme Label (Name, Author)
 			h('center.r-label', 
 				savedTheme.themeDetails.name
 				+ ' by: ' + savedTheme.themeDetails.author
 			),
+
+			// Delete Theme Button
 			h('div.r-btn--standard#delete-theme-btn', {
 				theme_index: idx,
 				onmousedown () {
@@ -1108,7 +1188,24 @@ function buildGallerySection(savedThemesArr) {
 						deleteThemeFromGallery( event.target.getAttribute('theme_index') )
 					}
 				}
-			}, 'Hold For 3s To Delete Theme')
+			}, 'Hold For 3s To Delete Theme'),
+
+			// Keywords
+			h('div.r-setting', 
+				h('label.r-label', 'Keywords:'),
+				h('input.r-input.r-input--text', {
+					theme_index: idx,
+					type: 'text',
+					placeholder: 'Separate,With,Comma',
+					value: savedTheme.themeDetails?.keywords || '',
+					oninput (event) {
+						updateThemeKeywords(
+							event.target.getAttribute('theme_index'), 
+							event.target.value
+						);
+					}
+				})
+			),
 		);
 
 		// build the theme preview
@@ -1223,6 +1320,8 @@ function buildGallerySection(savedThemesArr) {
 		galleryElements,
 		true
 	);
+
+	stopKeyboardPropagation();
 }
 
 // This function is the first one to be called after Ray's stuff runs
