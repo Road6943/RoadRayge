@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.3.9-alpha
+// @version      1.4.0-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -12,7 +12,6 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
-// @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
 // @grant        GM_addStyle
 // @grant        GM_setClipboard
@@ -532,6 +531,7 @@ function HOISTED(){};
 var themeDetailsStorageKey = "RR_themeDetails";
 var themeColorStorageKey = "RR_themeColor";
 var savedThemesStorageKey = "RR_savedThemes";
+var filterQueryStorageKey = "RR_filterQuery";
 
 // used to ensure user holds down btn for 3 seconds before the functionality actually happens
 // to prevent accidental stray clicks
@@ -764,6 +764,24 @@ function updateThemeDetails(prop, newVal) {
 	GM_setValue(themeDetailsStorageKey, JSON.stringify(currentThemeDetails))
 }
 
+function updateThemeTags(themeIndexInSavedThemes, newTags) {
+	// universal source of truth for gallery is storage's savedThemesStorageKey
+	const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+
+	// modify savedThemes
+	savedThemes[themeIndexInSavedThemes].themeDetails.tags = newTags;
+
+	// resave to storage
+	GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
+}
+
+function updateFilterQuery(newFilterQuery) {
+	GM_setValue(filterQueryStorageKey, newFilterQuery);
+	buildGallerySection(
+		HOISTED.filterHelper.filterSavedThemes(newFilterQuery)  // returns theme array
+	);
+}
+
 
 function addThemeToGallery(
 	arrasObj = unsafeWindow.Arras(), 
@@ -802,73 +820,6 @@ function deleteThemeFromGallery(themeIndexInSavedThemes) {
 	GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 }
 
-function updateThemeKeywords(themeIndexInSavedThemes, newKeywords) {
-	// universal source of truth for gallery is storage's savedThemesStorageKey
-	const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
-
-	// modify savedThemes
-	savedThemes[themeIndexInSavedThemes].themeDetails.keywords = newKeywords;
-
-	// resave to storage
-	GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
-}
-
-// Filter the Gallery section to only show the themes
-// with a matching value in themeDetails
-function filterSavedThemes(searchQuery) {
-	// universal source of truth for gallery is storage's savedThemesStorageKey
-	const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
-
-	// blank search means return all saved themes
-	if (searchQuery.trim() === "") {
-		return savedThemes;
-	}
-
-	// search query is a string, its either a single query or multiple queries separated by a comma
-	const queriesToSearchForArr = searchQuery
-		.split(',')
-		.map(query => query.toLowerCase().trim())
-		.filter(query => query.length > 0);
-	
-	// find themes whose themeDetails matches search query
-	const filteredThemes = [];
-	for (const savedTheme of savedThemes) {
-		// iterate over every value in themeDetails
-		for (let val of Object.values(savedTheme.themeDetails)) {
-			val = val.toLowerCase();
-
-			// iterate over all possible search queries
-			// check if any search query matches any value in themeDetails
-			if (queriesToSearchForArr.some(query => val.includes(query))) {
-				// if there's a match, then add the theme to the filtered array
-				// and then break to move to next theme without checking rest of themeDetails vals
-				filteredThemes.push(savedTheme);
-				break;
-			}
-		}
-	}
-
-	return filteredThemes;
-}
-
-
-// import an external javascript file
-// to import CSS, use `@resource {varToDumpCSSIn} {urlOfExternalStyleSheet}`
-// then, `GM_addStyle(GM_getResouceText(varToDumpCSSIn))`
-function importJS(url) {
-	// you need to select "allow always for this domain" in the tampermonkey popup
-	GM_xmlhttpRequest({
-		method: "GET",
-		url: url,
-		onload(event)  {
-			let scriptTag = document.createElement('script');
-			scriptTag.innerText = event.responseText;
-			document.head.appendChild(scriptTag);
-		}
-	});
-}
-
-
 function appendElementsToContainer(containerSelector="", elements=[], clearContainerContents) {
 	// use a document fragment to append all elements at once to avoid extra re-rendering
 	const fragment = new DocumentFragment();
@@ -891,6 +842,171 @@ function temporarilyChangeText(elementSelector, newText, durationInMs=3*1000) {
 		element.innerText = oldText;
 	}, durationInMs);
 }
+
+class FilterHelper {
+	// Search String = "a,b|c,d"
+	// AND Query = "a,b" / "c,d"
+	// AND Query Segment =  a/b/c/d
+	
+	// To add new operator, add it in constructor and getMatchFunc, and rest should be fine
+	constructor() {
+		this.orSeparator = "|"; // a|b = a || b
+		this.andSeparator = ","; // a,b == a && b
+
+		// operators
+		this.equalsOperator = "=="; // name==c means (name === c)
+		this.containsOperator = "~~" // name~~c means (c in name)
+		this.operators = [
+			this.equalsOperator,
+			this.containsOperator,
+		];
+
+		// Add reverse operators, like for == (equals) add !== (not-equals)
+		this.reverseOperatorPrefix = "!"; // turns an operator into the reverse operator
+		for (const operator of [...this.operators]) {
+			this.operators.push( this.reverseOperatorPrefix + operator );
+		}
+	}
+
+	// return a (needle,haystack) => bool func
+	getMatchFunc(operator="") {
+		// default match is a "does include"
+		const defaultMatchFunction = (needle, haystack) => haystack.includes(needle);
+		if (!operator) return defaultMatchFunction;
+
+		const operatorToFunc = {
+			[this.equalsOperator]: (needle, haystack) => haystack === needle,
+			[this.containsOperator]: (needle, haystack) => haystack.includes(needle),
+		}
+
+		if (operatorToFunc.hasOwnProperty(operator)) {
+			return operatorToFunc[operator];
+		}
+		// for negated operators, return a matchFunc thats the opposite of the un-negated operator
+		if (operator.startsWith(this.reverseOperatorPrefix)) {
+			const oppositeOperator = operator.slice(this.reverseOperatorPrefix.length);
+			if (operatorToFunc.hasOwnProperty(oppositeOperator)) {
+				return (needle, haystack) => {
+					const oppositeMatchFunc = operatorToFunc[oppositeOperator];
+					return !oppositeMatchFunc(needle, haystack);
+				}
+			}
+			// if un-negated operator doesn't have a match function, proceed to default case
+		}
+
+		return defaultMatchFunction;
+	}
+
+	// returns array of themes
+	// "a,author==b|name=/=c,d;e" is parsed as (a && (author === b)) || ((name != c) && d) || e
+	filterSavedThemes(searchString) {
+		// universal source of truth for gallery is storage's savedThemesStorageKey
+		const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+		if (!savedThemes) {
+			return [];
+		}
+
+		// blank search or means return all saved themes
+		if (searchString.trim() === "") {
+			return savedThemes;
+		}
+
+		// searchString is a string that can be split into multiple AND queries
+		// The whole searchString operates as an OR query
+		const filteredThemes = [];
+		for (const savedTheme of savedThemes) {
+			// Check OR logic after AND logic
+			const andQueries = searchString.split(this.orSeparator);
+			for (let andQuery of andQueries) {
+				andQuery = this.formatString(andQuery);
+				if (!andQuery) continue;
+
+				// if any AND query is true, then entire searchString is true
+                // if so, then add it to the filteredThemes and move to next theme
+				if (this.doesEntireAndQueryMatchTheme(andQuery, savedTheme)) {
+                    filteredThemes.push(savedTheme);
+                    break;
+                }
+			}
+		}
+
+		return filteredThemes;
+	}
+
+	formatString(query) {
+		return query.trim().toLowerCase();
+	}
+
+    // If og searchString was "a,b|c,d|e" then a,b / c,d / e would all be an andQuery
+	// isMatchFunc is (needle,haystack) => bool
+	doesEntireAndQueryMatchTheme(andQuery, theme) {
+		const andQuerySegments = andQuery.split(this.andSeparator);
+		for (let andQuerySegment of andQuerySegments) {
+			// format and query
+			andQuerySegment = this.formatString(andQuerySegment);
+			if (!andQuerySegment) continue;
+
+			// check if current and query is a match
+            // if any AND query segment is false, then its parent AND query is false
+			const [trueQuery, themeDetailsKeysToCheck, isMatchFunc] = this.parseAndQuerySegment(andQuerySegment, theme);
+            if (!this.doesAndQuerySegmentMatchTheme(trueQuery, theme, themeDetailsKeysToCheck,isMatchFunc)) {
+                return false;
+            }
+		}
+        // if all AND query segments are true, return true
+        return true;
+	}
+
+    // If og searchString was "a,b|c,d|e" then a b c d e would all be an andQuerySegment
+	// isMatchFunc is (needle,haystack) => bool
+	doesAndQuerySegmentMatchTheme(andQuerySegment, theme, themeDetailsKeysToCheck, isMatchFunc) {		
+		for (const key of themeDetailsKeysToCheck) {
+			const themeDetailsVal = this.formatString(theme.themeDetails[key]);
+            if (isMatchFunc(andQuerySegment, themeDetailsVal)) {
+                return true;
+            }
+		}
+		return false;
+	}
+
+	// returns [trueQuery, themeDetailsKeysToCheck, isMatchFunc]
+	// trueQuery is the query without any operators/themeDetails keys at the start
+    //      author==road turns into trueQuery=road, themeDetailsKeysToCheck=[author], isMatchFunc=getMatchFunc(==)
+	// isMatchFunc is (needle,haystack)=>bool
+	// a lot of the advanced logic can go here
+	parseAndQuerySegment(andQuerySegment, theme) {
+        // This only works properly if themeDetails keys are all lowercase, so use snake_case not camelCase
+		const allThemeDetailsKeys = Object.keys(theme.themeDetails);
+
+		for (const operator of this.operators) {
+			const returnArr = this.parseAndQuerySegmentHelper(andQuerySegment, operator, allThemeDetailsKeys);
+			if (returnArr !== null) {
+				return returnArr;
+			}
+			// if returnArr was null then the operator wasn't present
+			// continue to next operator
+		}
+		// if no operators matched, do a normal "does contain" match
+		// no arg to getMatchFunc gives default matchFunc
+		return [andQuerySegment, allThemeDetailsKeys, this.getMatchFunc()];
+	}
+
+    parseAndQuerySegmentHelper(andQuerySegment, operator, allThemeDetailsKeys) {		
+		if (andQuerySegment.includes(operator)) {
+            // if user provides valid key to filter on (name/author/tags)
+            // then only filter for that key
+            const [filterOnKey, trueQuery] = andQuerySegment.split(operator).map(x => x.trim());
+            if (allThemeDetailsKeys.includes(filterOnKey)) {
+                return [trueQuery, [filterOnKey], this.getMatchFunc(operator)] ;
+            }
+            // if filterOnKey is invalid, continue and treat querySegment like a normal search
+		}
+
+		// if operator doesn't properly exist in segment, return null
+		return null;
+	}
+}
+HOISTED.filterHelper = new FilterHelper();
 
 
 function buildMiscSection(themeColorObj, themeDetailsObj) {
@@ -1136,27 +1252,28 @@ function buildGallerySection(savedThemesArr, options={}) {
 		)
 	);
 
-	// Variables to use in push call below
-	const filterThemesValueKey = 'filterThemesValue';
 	galleryElements.push(
 		// Filter Themes
 		h('div.r-setting', 
 			h('label.r-label', 'Filter Themes:'),
 			h('input.r-input.r-input--text#filter-themes-input', {
 				type: 'text',
-				placeholder: 'Separate,With,Comma',
-				value: options[filterThemesValueKey] || '',
+				placeholder: 'Enter search query',
+				value: GM_getValue(filterQueryStorageKey) || "",
 				onchange () {
-					buildGallerySection(
-						filterSavedThemes(this.value), 
-						{ [filterThemesValueKey]: this.value }
-					);
+					updateFilterQuery(this.value);
 				}
 			})
 		),
 
-		h(`div.r-setting.r-description#filter-themes-description`, 
-				'Click outside textbox to search. Do multiple simultaneous searches by separating them with a comma.'),
+		// Filter themes description
+		h(`a.r-setting.r-description#filter-themes-description`, {
+			href: "https://github.com/Road6943/RoadRayge/blob/main/notes/filter-info.md",
+			target: "_blank", // opens in new tab
+			rel: "noopener noreferrer",
+		},
+			'Click outside textbox to search. Click me to see advanced filtering options.'
+		),
 
 		h('hr.gallery-divider')
 	)
@@ -1190,16 +1307,16 @@ function buildGallerySection(savedThemesArr, options={}) {
 				}
 			}, 'Hold For 3s To Delete Theme'),
 
-			// Keywords
+			// Theme Tags
 			h('div.r-setting', 
-				h('label.r-label', 'Keywords:'),
+				h('label.r-label', 'Tags:'),
 				h('input.r-input.r-input--text', {
 					theme_index: idx,
 					type: 'text',
 					placeholder: 'Separate,With,Comma',
-					value: savedTheme.themeDetails?.keywords || '',
+					value: savedTheme.themeDetails?.tags || '',
 					oninput (event) {
-						updateThemeKeywords(
+						updateThemeTags(
 							event.target.getAttribute('theme_index'), 
 							event.target.value
 						);
@@ -1359,7 +1476,8 @@ var initThemeColorStuff = function() {
 
 		// apply the saved theme, and build the ui in the process
 		applyTheme({themeDetails, config: {...settings, themeColor}});
-		buildGallerySection(savedThemesArr);
+		// updateFilterQuery calls buildGallerySection which builds the gallery ui
+		updateFilterQuery( GM_getValue(filterQueryStorageKey) || "" );
 	}
 }
 
