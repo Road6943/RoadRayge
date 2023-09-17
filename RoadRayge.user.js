@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.4.0-alpha
+// @version      1.4.1-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -775,11 +775,40 @@ function updateThemeTags(themeIndexInSavedThemes, newTags) {
 	GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 }
 
+// when index="", return prefix without the index
+function getThemeIndexClass(index="") {
+	return `theme-index-${index}`;
+}
+
 function updateFilterQuery(newFilterQuery) {
 	GM_setValue(filterQueryStorageKey, newFilterQuery);
-	buildGallerySection(
-		HOISTED.filterHelper.filterSavedThemes(newFilterQuery)  // returns theme array
-	);
+	const filteredThemesIndexesArr = HOISTED.filterHelper.filterSavedThemes(newFilterQuery);
+	const filteredThemesIndexesSet = new Set(filteredThemesIndexesArr);
+	
+	// Don't rerender entire gallery section with buildGallerySection because then this workflow breaks:
+	// - filter something
+	// - add tag to theme
+	// - undo filter
+	// - tag shows up for wrong theme
+	// - this also breaks delete (wrong theme deleted)
+
+	// Instead, hide non-matching themes
+	// first, get all elements with the theme_index property and reset their display values
+	document.querySelectorAll(`[theme_index]`).forEach(elem => {
+		// The r-setting needs display flex, the rest are display block
+		elem.style.display =  elem.classList.contains('displayflex') ? 'flex' : 'block';
+	})
+	// next, loop over savedThemes and hide any at non-matching indexes
+	const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+	for (let i = 0; i < savedThemes.length; i++) {
+		// skip themes that should be shown
+		if (filteredThemesIndexesSet.has(i)) continue;
+
+		// hide all other themes
+		document.querySelectorAll(`[theme_index="${i}"]`).forEach(elem => {
+			elem.style.display = 'none';
+		})
+	}
 }
 
 
@@ -897,7 +926,7 @@ class FilterHelper {
 		return defaultMatchFunction;
 	}
 
-	// returns array of themes
+	// returns array of integers, each of which is the index in savedThemes of a filteredTheme
 	// "a,author==b|name=/=c,d;e" is parsed as (a && (author === b)) || ((name != c) && d) || e
 	filterSavedThemes(searchString) {
 		// universal source of truth for gallery is storage's savedThemesStorageKey
@@ -908,13 +937,14 @@ class FilterHelper {
 
 		// blank search or means return all saved themes
 		if (searchString.trim() === "") {
-			return savedThemes;
+			return savedThemes.map((_, idx) => idx);
 		}
 
 		// searchString is a string that can be split into multiple AND queries
 		// The whole searchString operates as an OR query
-		const filteredThemes = [];
-		for (const savedTheme of savedThemes) {
+		const filteredThemesIndexes = [];
+		for (let i = 0; i < savedThemes.length; i++) {
+			const savedTheme = savedThemes[i];
 			// Check OR logic after AND logic
 			const andQueries = searchString.split(this.orSeparator);
 			for (let andQuery of andQueries) {
@@ -924,13 +954,13 @@ class FilterHelper {
 				// if any AND query is true, then entire searchString is true
                 // if so, then add it to the filteredThemes and move to next theme
 				if (this.doesEntireAndQueryMatchTheme(andQuery, savedTheme)) {
-                    filteredThemes.push(savedTheme);
+                    filteredThemesIndexes.push(i);
                     break;
                 }
 			}
 		}
 
-		return filteredThemes;
+		return filteredThemesIndexes;
 	}
 
 	formatString(query) {
@@ -1287,13 +1317,13 @@ function buildGallerySection(savedThemesArr, options={}) {
 
 		galleryElements.push(
 			// Theme Label (Name, Author)
-			h('center.r-label', 
+			h(`center.r-label`, { theme_index: idx },  
 				savedTheme.themeDetails.name
 				+ ' by: ' + savedTheme.themeDetails.author
 			),
 
 			// Delete Theme Button
-			h('div.r-btn--standard#delete-theme-btn', {
+			h(`div.r-btn--standard.${getThemeIndexClass(idx)}#delete-theme-btn`, {
 				theme_index: idx,
 				onmousedown () {
 					buttonClickStartTime.deleteTheme = performance.now();
@@ -1308,7 +1338,7 @@ function buildGallerySection(savedThemesArr, options={}) {
 			}, 'Hold For 3s To Delete Theme'),
 
 			// Theme Tags
-			h('div.r-setting', 
+			h(`div.r-setting.displayflex`, { theme_index: idx },
 				h('label.r-label', 'Tags:'),
 				h('input.r-input.r-input--text', {
 					theme_index: idx,
@@ -1326,7 +1356,10 @@ function buildGallerySection(savedThemesArr, options={}) {
 		);
 
 		// build the theme preview
-		const svg = s('svg', {
+		// NOTE: you must put class/id as a property not as a .class or #id after
+		//		svg/rect/... because the s() func isn't that complex
+		const svg = s(`svg`, {
+			theme_index: idx,
 			width: '87%',
 			height: '185px',
 			className: 'preview',
@@ -1427,8 +1460,8 @@ function buildGallerySection(savedThemesArr, options={}) {
 
 		galleryElements.push(
 			svg,
-			h('hr.gallery-divider')
-		);	
+			h(`hr.gallery-divider`, { theme_index: idx })
+		);
 
 	}
 
@@ -1476,8 +1509,7 @@ var initThemeColorStuff = function() {
 
 		// apply the saved theme, and build the ui in the process
 		applyTheme({themeDetails, config: {...settings, themeColor}});
-		// updateFilterQuery calls buildGallerySection which builds the gallery ui
-		updateFilterQuery( GM_getValue(filterQueryStorageKey) || "" );
+		buildGallerySection(savedThemesArr);
 	}
 }
 
