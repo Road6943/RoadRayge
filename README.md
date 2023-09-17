@@ -27,6 +27,9 @@ Fully customizable theme and graphics editor for [arras.io](https://arras.io/). 
 ---
 
 ## Release History
+* 1.4-alpha
+  * Added cursor customization
+  * Added theme tags and filtering
 * 1.3-alpha
   * Added theme color editor and ability to save multiple themes
 * 1.2-alpha
