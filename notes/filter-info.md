@@ -24,7 +24,7 @@ If you separate conditions with a `|` then themes that meet ANY of the condition
 AND logic is evaluated first (higher precedence) before OR logic. This means that `c|d,e` matches themes that match `c` + also matches themes that match both `d` AND `e`. In Python this is `c or (d and e)`.
 
 ## Example
-Consider this search: `author!==road, tags~~dark theme | light, very cool | tags!~~futuristic, tags!~~outer space, retro`.
+Consider this search: `author!==road, tags~~dark theme | light, very cool | tags!~~futuristic, tags!~~outer space, retro`
 
 This would match all themes that meet ***at least one*** of the following criteria. Remember that the theme details properties are the theme's name/author/tags:
 * Theme's author is not exactly `road` AND theme has `dark theme` in its tags
