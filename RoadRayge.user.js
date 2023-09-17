@@ -1292,6 +1292,10 @@ function buildGallerySection(savedThemesArr, options={}) {
 				value: GM_getValue(filterQueryStorageKey) || "",
 				onchange () {
 					updateFilterQuery(this.value);
+				},
+				// for when page is reloaded
+				onclick () {
+					updateFilterQuery(this.value);
 				}
 			})
 		),
