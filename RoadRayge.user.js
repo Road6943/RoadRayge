@@ -1290,7 +1290,7 @@ function buildGallerySection(savedThemesArr, options={}) {
 				type: 'text',
 				placeholder: 'Enter search query',
 				value: GM_getValue(filterQueryStorageKey) || "",
-				onchange () {
+				oninput () {
 					updateFilterQuery(this.value);
 				},
 				// for when page is reloaded
