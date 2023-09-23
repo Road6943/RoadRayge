@@ -1557,7 +1557,10 @@ function exportTheme(
 		themeToExport = {
 			name: themeDetailsObj.name,
 			author: themeDetailsObj.author,
-			content: {},
+			content: {
+				paletteSize: 10,
+				border: arrasObj.themeColor.border,
+			},
 		};
 
 		for (let colorName of colorNames) {
