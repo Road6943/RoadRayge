@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.4.1-alpha
+// @version      1.4.2-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -1098,7 +1098,18 @@ function buildMiscSection(themeColorObj, themeDetailsObj) {
 		),
 		h(`div.r-setting.r-description`, 
 			"Can be used with Arras.io's custom theme input. Only has colors & border. DOES NOT INCLUDE ANY GRAPHICAL OR GUI PROPERTIES."
-		)
+		),
+
+		h('div.r-setting', 
+			h('div.r-btn--standard#export-all-btn', {
+				onclick () {
+					exportTheme('all');
+				}
+			}, 'Export All Saved Themes')
+		),
+		h(`div.r-setting.r-description`, 
+			"Your friends can import this into their RoadRayge client!"
+		),
 	];
 
 	const importThemeElements = [
@@ -1525,6 +1536,7 @@ function exportTheme(
 	themeDetailsObj = JSON.parse(GM_getValue(themeDetailsStorageKey))
 ) {
 	var themeToExport = {};
+	var copiedToClipboardMsg = 'Copied To Clipboard!';
 
 	// 'tiger' themes are purposefully incompatible with 'arras' themes because we don't want people who are not familiar with tiger
 	// to become confused why a theme they got/found from someone else doesn't seem to work properly 
@@ -1539,7 +1551,7 @@ function exportTheme(
 		};
 
 		themeToExport = 'TIGER_JSON' + JSON.stringify(themeToExport);
-		temporarilyChangeText("#export-tiger_json-btn", "Copied To Clipboard!");
+		temporarilyChangeText("#export-tiger_json-btn", copiedToClipboardMsg);
 	}
 	else if (type === 'backwardsCompatible') {
 		themeToExport = {
@@ -1555,10 +1567,14 @@ function exportTheme(
 		}
 
 		themeToExport = JSON.stringify(themeToExport);
-		temporarilyChangeText("#export-bc-btn", "Copied To Clipboard!");
+		temporarilyChangeText("#export-bc-btn", copiedToClipboardMsg);
+	}
+	else if (type === 'all') {
+		themeToExport = 'TIGER_LIST' + (GM_getValue(savedThemesStorageKey) || '[]');
+		temporarilyChangeText("#export-all-btn", copiedToClipboardMsg);
 	}
 	else {
-		console.log('unsupported export theme type');
+		console.log('Unsupported export theme type: ' + type.toString());
 		return;
 	}
 
@@ -1627,11 +1643,12 @@ function applyTheme(themeObj) {
 }
 
 
-// supports both types of arras themes as well as the new TIGER_JSON theme type
+// supports both types of arras themes as well as the new TIGER_JSON theme type + the new TIGER_LIST multiple-themes format
 // this function only converts an imported theme string into a js object mirroring this.config/the game's Arras() object
 // but importTheme calls a different function (applyTheme) that will take in a theme obj and change the game's visual properties
 function importTheme(themeToImport) {
 	try {
+		shouldApplyTheme = true;
 		themeToImport = themeToImport.trim();
 
 		if (themeToImport === '') {
@@ -1645,6 +1662,25 @@ function importTheme(themeToImport) {
 				// remove TIGER_JSON from start of string
 				themeToImport = themeToImport.substring( 'TIGER_JSON'.length );
 				themeToImport = JSON.parse(themeToImport);
+			}
+			// tiger list is a json array of multiple theme objects
+			else if (themeToImport.startsWith('TIGER_LIST')) {
+				// parse TIGER_LIST[themeObj's] string into themeObj array
+				var themesToImportArr = themeToImport.substring( 'TIGER_LIST'.length );
+				themesToImportArr = JSON.parse(themesToImportArr);
+				console.log('Multiple themes imported!');
+				console.log(themesToImportArr);
+
+				// apply the first imported theme if possible
+				if (themesToImportArr.length > 0) {
+					themeToImport = themesToImportArr[0];
+				}
+				
+				// Add imported themes to savedThemes and rerender gallery
+				var currentSavedThemes = JSON.parse(GM_getValue(savedThemesStorageKey) || '[]');
+				var newSavedThemes = [...themesToImportArr, ...currentSavedThemes];
+				GM_setValue(savedThemesStorageKey, JSON.stringify(newSavedThemes));
+				buildGallerySection(newSavedThemes);
 			}
 			else {
 				console.log('invalid tiger theme format')
@@ -1687,7 +1723,10 @@ function importTheme(themeToImport) {
 		document.querySelector("#theme-import-input").value = "";
 
 		// use the js object to change the game's colors
-		applyTheme(themeToImport);
+		if (shouldApplyTheme) {
+			applyTheme(themeToImport);
+		}
+
 	} catch (error) {
 		console.error('theme importing failed');
 		console.error(error);
