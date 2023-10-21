@@ -3,12 +3,26 @@ Fully customizable theme and graphics editor for [arras.io](https://arras.io/). 
 
 ---
 
-**How to Install:**
+**How to Install (Web):**
 1. Install the Tampermonkey extension. [Click me](https://www.tampermonkey.net/?ext=dhdg) to view links to help you install Tampermonkey for your browser of choice.
 2. Once you have installed Tampermonkey, click [this link right here](https://github.com/Road6943/RoadRayge/raw/main/RoadRayge.user.js), and you should see a userscript-installation tab pop up. Click "Install" to do so.
 3. Navigate to [arras.io](https://arras.io/), and you should see a gear icon on the top right. If so, then congrats! You've successfully installed the script!
 4. If you do not see the gear icon in the top right, then you may need to disable your other Tampermonkey extensions (**especially TIGER**) by clicking on the Tampermonkey extension icon.
 4. Enjoy!
+
+**How to Install (iOS Safari):**
+1. Install the "Stay" app - https://apps.apple.com/gb/app/stay-for-safari/id1591620171
+2. Open "Stay" and click the button at the bottom that says "I am an experienced user, skip for now".
+3. In the leftmost tab in "Stay", the one that says "Userscripts" at the top, click the `+` sign in the top right
+4. Click "Link", and paste the url at the end of this bullet point. Feel free to dismiss the popup message asking you to watch a video, its not needed: `https://raw.githubusercontent.com/Road6943/RoadRayge/main/RoadRayge.user.js`
+5. Once the link is pasted, click "Save" at the bottom and then "Create" at the top right to finish saving the userscript
+6. When you're back at the Userscripts tab, click on your newly installed userscript
+7. Change "Inject Mode" to "page", then use the button at the top left to return to the Userscripts tab
+8. Open `arras.io` in a new Safari tab
+9. Click `aA` in the left of the url bar, then click "Stay"
+10. Select "Always Allow" then "Always Allow on **THIS** Website", not Every Website
+11. Click Done, and now enjoy using RoadRayge on mobile!
+12. If you want to make sure Stay doesn't have access to any other websites, go to `Settings > Safari > Extensions > Allow These Extensions > Stay`
 
 ---
 
