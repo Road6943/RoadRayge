@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.4.2-alpha
+// @version      1.4.3-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -15,11 +15,10 @@
 // @grant        GM_getResourceText
 // @grant        GM_addStyle
 // @grant        GM_setClipboard
-// @grant        unsafeWindow
 // @license      MIT
 // ==/UserScript==
 
-const arras = unsafeWindow.Arras();
+const arras = Arras();
 const clone = JSON.parse(JSON.stringify(arras));
 const settings = GM_getValue('settings', clone);
 const backgroundImage = GM_getValue('backgroundImage');
@@ -813,7 +812,7 @@ function updateFilterQuery(newFilterQuery) {
 
 
 function addThemeToGallery(
-	arrasObj = unsafeWindow.Arras(), 
+	arrasObj = Arras(), 
 	themeDetails = JSON.parse(GM_getValue(themeDetailsStorageKey))
 ) {
 	if (!themeDetails.name) {
@@ -1498,7 +1497,7 @@ var initThemeColorStuff = function() {
 	// create the theme stuff once it does and then clear the interval away
 	const checkIfThemeColorExistsInterval = setInterval(() => {
 		// return early is themeColor doesn't exist yet
-		if ((typeof unsafeWindow.Arras().themeColor) == "undefined") {
+		if ((typeof Arras().themeColor) == "undefined") {
 			return;
 		}
 
@@ -1532,7 +1531,7 @@ var initThemeColorStuff = function() {
 // export a theme as either a 'tiger' theme (using json format) or 'arras' theme (json format, only contains themeColor changes)
 function exportTheme(
 	type, 
-	arrasObj = unsafeWindow.Arras(), 
+	arrasObj = Arras(), 
 	themeDetailsObj = JSON.parse(GM_getValue(themeDetailsStorageKey))
 ) {
 	var themeToExport = {};
@@ -1626,19 +1625,19 @@ function applyTheme(themeObj) {
 	// change controls in RoadRayge by re-rendering ui
 	appendElementsToContainer(
 		"#graphical-container", 
-		settingsFactory("graphical", unsafeWindow.Arras()),
+		settingsFactory("graphical", Arras()),
 		true
 	);
 	appendElementsToContainer(
 		"#gui-container",
-		settingsFactory("gui", unsafeWindow.Arras()),
+		settingsFactory("gui", Arras()),
 		true
 	);
 	buildMiscSection(
-		unsafeWindow.Arras().themeColor, 
+		Arras().themeColor, 
 		JSON.parse(GM_getValue(themeDetailsStorageKey))
 	);
-	buildColorsSection(unsafeWindow.Arras().themeColor);
+	buildColorsSection(Arras().themeColor);
 
 	// run this only after themeColor stuff is made 
 	// or else it won't affect themeColor stuff
