@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.5.0-alpha
+// @version      1.5.1-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -1536,6 +1536,33 @@ async function main() {
 		}
 	}
 
+	// 'Stay' iOS userscript manager doesn't support GM.setClipboard
+	// modified from https://gist.github.com/wilsonpage/6f15d9b173584195eaa5dee42215bd81 by removing the isIos check
+	function iosSetClipboard(text) {
+		const textarea = document.createElement('textarea');
+		
+		// create textarea
+		textarea.value = text;
+		
+		// ios will zoom in on the input if the font-size is < 16px
+		textarea.style.fontSize = '20px';
+		document.body.appendChild(textarea);
+		
+		// select text
+		const range = document.createRange();
+		range.selectNodeContents(textarea);
+	
+		const selection = window.getSelection();
+		selection.removeAllRanges();
+		selection.addRange(range);
+		textarea.setSelectionRange(0, 999999);
+		
+		// copy selection
+		document.execCommand('copy');
+		
+		// cleanup
+		document.body.removeChild(textarea);
+	};
 
 	// export a theme as either a 'tiger' theme (using json format) or 'arras' theme (json format, only contains themeColor changes)
 	async function exportTheme(
@@ -1594,12 +1621,11 @@ async function main() {
 			return;
 		}
 
-		// copy to clipboard
-		if (GM.setClipboard) {
-			await GM.setClipboard(themeToExport);
+		// copy to clipboard - ios doesn't support GM.setClipboard so use fallback for that
+		if (navigator.userAgent.match(/ipad|iphone/i)) {
+			iosSetClipboard(themeToExport);
 		} else {
-			// Stay iOS userscript manager doesn't support GM.setClipboard
-			await navigator.clipboard.writeText(themeToExport);
+			await GM.setClipboard(themeToExport);
 		}
 
 		console.log('Exported the following theme:');
