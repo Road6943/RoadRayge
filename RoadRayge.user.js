@@ -9,7 +9,7 @@
 // @homepageURL  https://github.com/Road6943/RoadRayge
 // @supportURL   https://github.com/Road6943/RoadRayge/issues
 // @run-at       document-end
-// @grant        GM_getValue
+// @grant        GM.getValue
 // @grant        GM_setValue
 // @grant        GM.addStyle
 // @grant        GM.setClipboard
@@ -19,12 +19,12 @@
 async function main() {
 	const arras = Arras();
 	const clone = JSON.parse(JSON.stringify(arras));
-	const settings = GM_getValue('settings', clone);
-	const backgroundImage = GM_getValue('backgroundImage');
+	const settings = await GM.getValue('settings', clone);
+	const backgroundImage = await GM.getValue('backgroundImage');
 
 	// Adding cursor customization similar to bg image stuff
 	const cursorStyleStorageKey = 'RR_cursor';
-	const getCursorStyle = () => GM_getValue(cursorStyleStorageKey, 'auto');
+	const getCursorStyle = async () => (await GM.getValue(cursorStyleStorageKey, 'auto'));
 
 	// Set and apply an `Arras()` setting
 	const update = (prop, key, val) => {
@@ -48,10 +48,10 @@ async function main() {
 	// Apply cursor style on start page
 	applyCursorStyle(); 
 	// Since textarea's don't load with a default value, set it here
-	let cursorStyleTextareaValueInterval = setInterval(() => {
+	let cursorStyleTextareaValueInterval = setInterval(async () => {
 		let cursorStyleTextarea = document.querySelector('#cursor-import-textarea');
 		if (cursorStyleTextarea) {
-			cursorStyleTextarea.value = getCursorStyle();
+			cursorStyleTextarea.value = await getCursorStyle();
 			clearInterval(cursorStyleTextareaValueInterval);
 		}
 	}, 1*1000);
@@ -374,7 +374,12 @@ async function main() {
 	});
 
 	// Applies the given cursorStyle to all the necessary elements
-	function applyCursorStyle(cursorStyle=getCursorStyle()) {
+	async function applyCursorStyle(cursorStyle) {
+		// can't do this in default parameter value
+		if (!cursorStyle) {
+			cursorStyle = await getCursorStyle();
+		}
+		
 		/* handle cursor.cc html inputs */
 		// remove everything before "url"
 		let startIndex = cursorStyle.indexOf("url");
@@ -408,7 +413,7 @@ async function main() {
 		type: 'text',
 		list: 'cursorStyleList',
 		placeholder: 'Enter a cursor style like crosshair',
-		value: getCursorStyle(),
+		value: await getCursorStyle(),
 		oninput () {
 			GM_setValue(cursorStyleStorageKey, this.value);
 			applyCursorStyle(this.value);
@@ -754,17 +759,17 @@ async function main() {
 		GM_setValue(themeColorStorageKey, JSON.stringify( Arras().themeColor ))
 	}
 
-	function updateThemeDetails(prop, newVal) {
+	async function updateThemeDetails(prop, newVal) {
 		// storage's themeDetailsStorageKey is the universal source of truth for themeDetais
-		const currentThemeDetails = JSON.parse(GM_getValue(themeDetailsStorageKey));
+		const currentThemeDetails = JSON.parse(await GM.getValue(themeDetailsStorageKey));
 		currentThemeDetails[prop] = newVal;
 		// update storage
 		GM_setValue(themeDetailsStorageKey, JSON.stringify(currentThemeDetails))
 	}
 
-	function updateThemeTags(themeIndexInSavedThemes, newTags) {
+	async function updateThemeTags(themeIndexInSavedThemes, newTags) {
 		// universal source of truth for gallery is storage's savedThemesStorageKey
-		const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+		const savedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey));
 
 		// modify savedThemes
 		savedThemes[themeIndexInSavedThemes].themeDetails.tags = newTags;
@@ -778,9 +783,9 @@ async function main() {
 		return `theme-index-${index}`;
 	}
 
-	function updateFilterQuery(newFilterQuery) {
+	async function updateFilterQuery(newFilterQuery) {
 		GM_setValue(filterQueryStorageKey, newFilterQuery);
-		const filteredThemesIndexesArr = HOISTED.filterHelper.filterSavedThemes(newFilterQuery);
+		const filteredThemesIndexesArr = await HOISTED.filterHelper.filterSavedThemes(newFilterQuery);
 		const filteredThemesIndexesSet = new Set(filteredThemesIndexesArr);
 		
 		// Don't rerender entire gallery section with buildGallerySection because then this workflow breaks:
@@ -797,7 +802,7 @@ async function main() {
 			elem.style.display =  elem.classList.contains('displayflex') ? 'flex' : 'block';
 		})
 		// next, loop over savedThemes and hide any at non-matching indexes
-		const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+		const savedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey));
 		for (let i = 0; i < savedThemes.length; i++) {
 			// skip themes that should be shown
 			if (filteredThemesIndexesSet.has(i)) continue;
@@ -810,10 +815,15 @@ async function main() {
 	}
 
 
-	function addThemeToGallery(
+	async function addThemeToGallery(
 		arrasObj = Arras(), 
-		themeDetails = JSON.parse(GM_getValue(themeDetailsStorageKey))
+		themeDetails
 	) {
+		// can't put async in default param value
+		if (!themeDetails) {
+			themeDetails = JSON.parse(await GM.getValue(themeDetailsStorageKey));
+		}
+
 		if (!themeDetails.name) {
 			themeDetails.name = "Enter Theme Name";
 		}
@@ -823,7 +833,7 @@ async function main() {
 
 		const config = JSON.parse(JSON.stringify(arrasObj));
 		// universal source of truth for gallery is storage's savedThemesStorageKey
-		const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+		const savedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey));
 		
 		// modify savedThemes, add to start of array so it shows up on top
 		savedThemes.unshift({themeDetails, config});
@@ -834,9 +844,9 @@ async function main() {
 		GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 	}
 
-	function deleteThemeFromGallery(themeIndexInSavedThemes) {
+	async function deleteThemeFromGallery(themeIndexInSavedThemes) {
 		// universal source of truth for gallery is storage's savedThemesStorageKey
-		const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+		const savedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey));
 		
 		// modify savedThemes
 		savedThemes.splice(themeIndexInSavedThemes, 1);
@@ -926,9 +936,9 @@ async function main() {
 
 		// returns array of integers, each of which is the index in savedThemes of a filteredTheme
 		// "a,author==b|name=/=c,d;e" is parsed as (a && (author === b)) || ((name != c) && d) || e
-		filterSavedThemes(searchString) {
+		async filterSavedThemes(searchString) {
 			// universal source of truth for gallery is storage's savedThemesStorageKey
-			const savedThemes = JSON.parse(GM_getValue(savedThemesStorageKey));
+			const savedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey));
 			if (!savedThemes) {
 				return [];
 			}
@@ -1276,7 +1286,7 @@ async function main() {
 		return element;
 	}
 
-	function buildGallerySection(savedThemesArr, options={}) {
+	async function buildGallerySection(savedThemesArr, options={}) {
 		const galleryElements = [];
 
 		// Add link to themes discord
@@ -1298,7 +1308,7 @@ async function main() {
 				h('input.r-input.r-input--text#filter-themes-input', {
 					type: 'text',
 					placeholder: 'Enter search query',
-					value: GM_getValue(filterQueryStorageKey) || "",
+					value: (await GM.getValue(filterQueryStorageKey)) || "",
 					oninput () {
 						updateFilterQuery(this.value);
 					},
@@ -1506,8 +1516,8 @@ async function main() {
 		}, 1*1000)
 
 		// get a value from storage, or add it to storage if it doesn't already exist
-		function getFromOrInitInStorage(storageKey, defaultVal) {
-			let toReturn = JSON.parse(GM_getValue(storageKey, "null"));
+		async function getFromOrInitInStorage(storageKey, defaultVal) {
+			let toReturn = JSON.parse(await GM.getValue(storageKey, "null"));
 			if (toReturn === null) {
 				toReturn = defaultVal;
 				GM_setValue(storageKey, JSON.stringify(toReturn));
@@ -1515,10 +1525,10 @@ async function main() {
 			return toReturn;
 		}
 
-		function realInitThemeColorStuff() {
-			const themeColor = getFromOrInitInStorage(themeColorStorageKey, Arras().themeColor);
-			const themeDetails = getFromOrInitInStorage(themeDetailsStorageKey, {name: '', author: ''});
-			const savedThemesArr = getFromOrInitInStorage(savedThemesStorageKey, defaultSavedThemes);
+		async function realInitThemeColorStuff() {
+			const themeColor = await getFromOrInitInStorage(themeColorStorageKey, Arras().themeColor);
+			const themeDetails = await getFromOrInitInStorage(themeDetailsStorageKey, {name: '', author: ''});
+			const savedThemesArr = await getFromOrInitInStorage(savedThemesStorageKey, defaultSavedThemes);
 
 			// apply the saved theme, and build the ui in the process
 			applyTheme({themeDetails, config: {...settings, themeColor}});
@@ -1531,8 +1541,13 @@ async function main() {
 	async function exportTheme(
 		type, 
 		arrasObj = Arras(), 
-		themeDetailsObj = JSON.parse(GM_getValue(themeDetailsStorageKey))
+		themeDetailsObj
 	) {
+		// can't put await in default param value
+		if (!themeDetailsObj) {
+			themeDetailsObj = JSON.parse(await GM.getValue(themeDetailsStorageKey));
+		}
+
 		var themeToExport = {};
 		var copiedToClipboardMsg = 'Copied To Clipboard!';
 
@@ -1571,7 +1586,7 @@ async function main() {
 			temporarilyChangeText("#export-bc-btn", copiedToClipboardMsg);
 		}
 		else if (type === 'all') {
-			themeToExport = 'TIGER_LIST' + (GM_getValue(savedThemesStorageKey) || '[]');
+			themeToExport = 'TIGER_LIST' + ((await GM.getValue(savedThemesStorageKey)) || '[]');
 			temporarilyChangeText("#export-all-btn", copiedToClipboardMsg);
 		}
 		else {
@@ -1591,14 +1606,14 @@ async function main() {
 	// be careful not to simply assign this.config to a new object, 
 	// because that will remove it being a reference to the actual game's Arras() object
 	// similarly, you can only directly change the atomic properties + arrays (not objects)
-	function applyTheme(themeObj) {
+	async function applyTheme(themeObj) {
 		// this function will create a new identical theme to remove reference to original theme object
 		// this prevents future theme modifications from screwing with the original theme
 		var newTheme = JSON.parse( JSON.stringify(themeObj) );
 
 		// theme details
 		for (let [key,val] of Object.entries(newTheme.themeDetails)) {
-			updateThemeDetails(key, val)
+			await updateThemeDetails(key, val);
 		}
 
 		const { config } = newTheme;
@@ -1634,7 +1649,7 @@ async function main() {
 		);
 		buildMiscSection(
 			Arras().themeColor, 
-			JSON.parse(GM_getValue(themeDetailsStorageKey))
+			JSON.parse(await GM.getValue(themeDetailsStorageKey))
 		);
 		buildColorsSection(Arras().themeColor);
 
@@ -1647,7 +1662,7 @@ async function main() {
 	// supports both types of arras themes as well as the new TIGER_JSON theme type + the new TIGER_LIST multiple-themes format
 	// this function only converts an imported theme string into a js object mirroring this.config/the game's Arras() object
 	// but importTheme calls a different function (applyTheme) that will take in a theme obj and change the game's visual properties
-	function importTheme(themeToImport) {
+	async function importTheme(themeToImport) {
 		try {
 			shouldApplyTheme = true;
 			themeToImport = themeToImport.trim();
@@ -1678,7 +1693,7 @@ async function main() {
 					}
 					
 					// Add imported themes to savedThemes and rerender gallery
-					var currentSavedThemes = JSON.parse(GM_getValue(savedThemesStorageKey) || '[]');
+					var currentSavedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey) || '[]');
 					var newSavedThemes = [...themesToImportArr, ...currentSavedThemes];
 					GM_setValue(savedThemesStorageKey, JSON.stringify(newSavedThemes));
 					buildGallerySection(newSavedThemes);
