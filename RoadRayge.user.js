@@ -10,7 +10,7 @@
 // @supportURL   https://github.com/Road6943/RoadRayge/issues
 // @run-at       document-end
 // @grant        GM.getValue
-// @grant        GM_setValue
+// @grant        GM.setValue
 // @grant        GM.addStyle
 // @grant        GM.setClipboard
 // @license      MIT
@@ -27,9 +27,9 @@ async function main() {
 	const getCursorStyle = async () => (await GM.getValue(cursorStyleStorageKey, 'auto'));
 
 	// Set and apply an `Arras()` setting
-	const update = (prop, key, val) => {
+	const update = async (prop, key, val) => {
 		settings[prop][key] = val;
-		GM_setValue('settings', settings);
+		await GM.setValue('settings', settings);
 		arras[prop][key] = val;
 	};
 
@@ -316,11 +316,11 @@ async function main() {
 		Object.entries(settingsObj[prop]).map(([key, val]) => {
 			let input;
 
-			const onInput = function () {
+			const onInput = async function () {
 				if (!this.validity.valid) return;
 
 				const newVal = this.type === 'checkbox' ? this.checked : Number(this.value);
-				update(prop, key, newVal);
+				await update(prop, key, newVal);
 			};
 
 			if (typeof val === 'boolean') {
@@ -367,8 +367,8 @@ async function main() {
 	const backgroundImageInput = h('input.r-input.r-input--text', { 
 		type: 'text',
 		value: backgroundImage || '',
-		oninput () {
-			GM_setValue('backgroundImage', this.value);
+		async oninput () {
+			await GM.setValue('backgroundImage', this.value);
 			document.body.style.background = `url(${this.value}) center / cover no-repeat`;
 		}
 	});
@@ -415,7 +415,7 @@ async function main() {
 		placeholder: 'Enter a cursor style like crosshair',
 		value: (await getCursorStyle()),
 		async oninput () {
-			GM_setValue(cursorStyleStorageKey, this.value);
+			await GM.setValue(cursorStyleStorageKey, this.value);
 			await applyCursorStyle(this.value);
 		}
 	});
@@ -738,7 +738,7 @@ async function main() {
 
 
 	// pass in a colorName string
-	function updateColor(colorName, newVal) {
+	async function updateColor(colorName, newVal) {
 		// Arras() obj is the universal source of truth for themeColor
 
 		let colorIndex = colorNameToIndex[colorName];
@@ -746,17 +746,17 @@ async function main() {
 		Arras().themeColor.table[colorIndex] = newVal;
 
 		// update storage
-		GM_setValue(themeColorStorageKey, JSON.stringify( Arras().themeColor ))
+		await GM.setValue(themeColorStorageKey, JSON.stringify( Arras().themeColor ))
 	}
 
-	function updateBorder(newVal) {
+	async function updateBorder(newVal) {
 		// Arras() obj is the universal source of truth for themeColor
 
 		// update game
 		Arras().themeColor.border = Number(newVal);
 
 		// update storage
-		GM_setValue(themeColorStorageKey, JSON.stringify( Arras().themeColor ))
+		await GM.setValue(themeColorStorageKey, JSON.stringify( Arras().themeColor ))
 	}
 
 	async function updateThemeDetails(prop, newVal) {
@@ -764,7 +764,7 @@ async function main() {
 		const currentThemeDetails = JSON.parse(await GM.getValue(themeDetailsStorageKey));
 		currentThemeDetails[prop] = newVal;
 		// update storage
-		GM_setValue(themeDetailsStorageKey, JSON.stringify(currentThemeDetails))
+		await GM.setValue(themeDetailsStorageKey, JSON.stringify(currentThemeDetails))
 	}
 
 	async function updateThemeTags(themeIndexInSavedThemes, newTags) {
@@ -775,7 +775,7 @@ async function main() {
 		savedThemes[themeIndexInSavedThemes].themeDetails.tags = newTags;
 
 		// resave to storage
-		GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
+		await GM.setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 	}
 
 	// when index="", return prefix without the index
@@ -784,7 +784,7 @@ async function main() {
 	}
 
 	async function updateFilterQuery(newFilterQuery) {
-		GM_setValue(filterQueryStorageKey, newFilterQuery);
+		await GM.setValue(filterQueryStorageKey, newFilterQuery);
 		const filteredThemesIndexesArr = await HOISTED.filterHelper.filterSavedThemes(newFilterQuery);
 		const filteredThemesIndexesSet = new Set(filteredThemesIndexesArr);
 		
@@ -841,7 +841,7 @@ async function main() {
 		// rerender gallery elements
 		await buildGallerySection(savedThemes);
 		// resave to storage
-		GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
+		await GM.setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 	}
 
 	async function deleteThemeFromGallery(themeIndexInSavedThemes) {
@@ -854,7 +854,7 @@ async function main() {
 		// rerender gallery elements
 		await buildGallerySection(savedThemes);
 		// resave to storage
-		GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
+		await GM.setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 	}
 
 	function appendElementsToContainer(containerSelector="", elements=[], clearContainerContents) {
@@ -1055,8 +1055,8 @@ async function main() {
 				type: 'number',
 				step: 'any',
 				value: themeColorObj.border,
-				oninput () {
-					updateBorder(this.value)
+				async oninput () {
+					await updateBorder(this.value)
 				}
 			})
 		);
@@ -1250,8 +1250,8 @@ async function main() {
 					h(`input.r-input.r-input--color#${colorName}-picker`, {
 						type: 'color',
 						value: themeColorObj.table[colorNameToIndex[colorName]],
-						oninput () {
-							updateColor(colorName, this.value)
+						async oninput () {
+							await updateColor(colorName, this.value);
 						}
 					})
 				),
@@ -1520,7 +1520,7 @@ async function main() {
 			let toReturn = JSON.parse(await GM.getValue(storageKey, "null"));
 			if (toReturn === null) {
 				toReturn = defaultVal;
-				GM_setValue(storageKey, JSON.stringify(toReturn));
+				await GM.setValue(storageKey, JSON.stringify(toReturn));
 			}
 			return toReturn;
 		}
@@ -1621,17 +1621,17 @@ async function main() {
 		// apply settings to game's Arras() obj
 		for (let prop in config) {
 			if (prop === "themeColor") {
-				updateBorder(config.themeColor.border);
+				await updateBorder(config.themeColor.border);
 				// colors
 				let tcTable = config.themeColor.table;
 				for (let i = 0; i < tcTable.length; i++) {
-					updateColor(HOISTED.colorNames[i], tcTable[i]);
+					await updateColor(HOISTED.colorNames[i], tcTable[i]);
 				}
 
 			// graphical, gui
 			} else { 
 				for (let [key,val] of Object.entries(config[prop])) {
-					update(prop, key, val);
+					await update(prop, key, val);
 				}
 			}
 		}
@@ -1695,7 +1695,7 @@ async function main() {
 					// Add imported themes to savedThemes and rerender gallery
 					var currentSavedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey) || '[]');
 					var newSavedThemes = [...themesToImportArr, ...currentSavedThemes];
-					GM_setValue(savedThemesStorageKey, JSON.stringify(newSavedThemes));
+					await GM.setValue(savedThemesStorageKey, JSON.stringify(newSavedThemes));
 					await buildGallerySection(newSavedThemes);
 				}
 				else {
