@@ -1597,8 +1597,6 @@ async function main() {
 		// copy to clipboard
 		if (GM.setClipboard) {
 			await GM.setClipboard(themeToExport);
-		} else {
-			await navigator?.clipboard?.writeText(themeToExport);
 		}
 
 		console.log('Exported the following theme:');
