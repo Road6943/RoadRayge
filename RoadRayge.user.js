@@ -46,7 +46,7 @@ async function main() {
 		document.body.style.background = style;
 	}
 	// Apply cursor style on start page
-	applyCursorStyle(); 
+	await applyCursorStyle(); 
 	// Since textarea's don't load with a default value, set it here
 	let cursorStyleTextareaValueInterval = setInterval(async () => {
 		let cursorStyleTextarea = document.querySelector('#cursor-import-textarea');
@@ -352,9 +352,9 @@ async function main() {
 		});
 
 	const settingsButton = h('button#r-btn--open', {
-		onclick () {
+		async onclick () {
 			this.nextSibling.style.width = '350px';
-			applyCursorStyle();
+			await applyCursorStyle();
 		}
 	});
 
@@ -413,10 +413,10 @@ async function main() {
 		type: 'text',
 		list: 'cursorStyleList',
 		placeholder: 'Enter a cursor style like crosshair',
-		value: await getCursorStyle(),
-		oninput () {
+		value: (await getCursorStyle()),
+		async oninput () {
 			GM_setValue(cursorStyleStorageKey, this.value);
-			applyCursorStyle(this.value);
+			await applyCursorStyle(this.value);
 		}
 	});
 
@@ -839,7 +839,7 @@ async function main() {
 		savedThemes.unshift({themeDetails, config});
 		
 		// rerender gallery elements
-		buildGallerySection(savedThemes);
+		await buildGallerySection(savedThemes);
 		// resave to storage
 		GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 	}
@@ -852,7 +852,7 @@ async function main() {
 		savedThemes.splice(themeIndexInSavedThemes, 1);
 		
 		// rerender gallery elements
-		buildGallerySection(savedThemes);
+		await buildGallerySection(savedThemes);
 		// resave to storage
 		GM_setValue(savedThemesStorageKey, JSON.stringify(savedThemes));
 	}
@@ -1068,8 +1068,8 @@ async function main() {
 				h('input.r-input.r-input--text', {
 					type: 'text',
 					value: themeDetailsObj.name,
-					oninput () {
-						updateThemeDetails('name', this.value)
+					async oninput () {
+						await updateThemeDetails('name', this.value);
 					}
 				})
 			),
@@ -1078,8 +1078,8 @@ async function main() {
 				h('input.r-input.r-input--text', {
 					type: 'text',
 					value: themeDetailsObj.author,
-					oninput () {
-						updateThemeDetails('author', this.value)
+					async oninput () {
+						await updateThemeDetails('author', this.value);
 					}
 				})
 			)
@@ -1088,8 +1088,8 @@ async function main() {
 		const exportThemeElements = [
 			h('div.r-setting', 
 				h('div.r-btn--standard#export-tiger_json-btn', {
-					onclick () {
-						exportTheme('TIGER_JSON');
+					async onclick () {
+						await exportTheme('TIGER_JSON');
 					}
 				}, 'Export Tiger Theme')
 			),
@@ -1099,8 +1099,8 @@ async function main() {
 
 			h('div.r-setting', 
 				h('div.r-btn--standard#export-bc-btn', {
-					onclick () {
-						exportTheme('backwardsCompatible');
+					async onclick () {
+						await exportTheme('backwardsCompatible');
 					}
 				}, 'Export Backwards-Compatible Theme')
 			),
@@ -1110,8 +1110,8 @@ async function main() {
 
 			h('div.r-setting', 
 				h('div.r-btn--standard#export-all-btn', {
-					onclick () {
-						exportTheme('all');
+					async onclick () {
+						await exportTheme('all');
 					}
 				}, 'Export All Saved Themes')
 			),
@@ -1127,8 +1127,8 @@ async function main() {
 					type: 'text',
 					value: '',
 					placeholder: 'Paste a theme here to import',
-					oninput () {
-						importTheme(this.value);
+					async oninput () {
+						await importTheme(this.value);
 					}
 				})
 			),
@@ -1141,11 +1141,11 @@ async function main() {
 				onmousedown () {
 					buttonClickStartTime.saveCurrentTheme = performance.now();
 				},
-				onmouseup () {
+				async onmouseup () {
 					// perforance.now uses milliseconds, so we divide by 1000 to convert to seconds
 					const timeButtonWasHeldFor = (performance.now() - buttonClickStartTime.saveCurrentTheme) / 1000;
 					if (timeButtonWasHeldFor >= 3) {
-						addThemeToGallery()
+						await addThemeToGallery();
 						temporarilyChangeText('#save-to-gallery-btn', 'Saved To Gallery!')
 					}
 				}
@@ -1309,12 +1309,12 @@ async function main() {
 					type: 'text',
 					placeholder: 'Enter search query',
 					value: (await GM.getValue(filterQueryStorageKey)) || "",
-					oninput () {
-						updateFilterQuery(this.value);
+					async oninput () {
+						await updateFilterQuery(this.value);
 					},
 					// for when page is reloaded
-					onclick () {
-						updateFilterQuery(this.value);
+					async onclick () {
+						await updateFilterQuery(this.value);
 					}
 				})
 			),
@@ -1351,11 +1351,11 @@ async function main() {
 					onmousedown () {
 						buttonClickStartTime.deleteTheme = performance.now();
 					},
-					onmouseup (event) {
+					async onmouseup (event) {
 						// perforance.now uses milliseconds, so we divide by 1000 to convert to seconds
 						const timeButtonWasHeldFor = (performance.now() - buttonClickStartTime.deleteTheme) / 1000;
 						if (timeButtonWasHeldFor >= 3) {
-							deleteThemeFromGallery( event.target.getAttribute('theme_index') )
+							await deleteThemeFromGallery( event.target.getAttribute('theme_index') )
 						}
 					}
 				}, 'Hold For 3s To Delete Theme'),
@@ -1368,8 +1368,8 @@ async function main() {
 						type: 'text',
 						placeholder: 'Separate,With,Comma',
 						value: savedTheme.themeDetails?.tags || '',
-						oninput (event) {
-							updateThemeTags(
+						async oninput (event) {
+							await updateThemeTags(
 								event.target.getAttribute('theme_index'), 
 								event.target.value
 							);
@@ -1395,8 +1395,8 @@ async function main() {
 				`,
 			});
 			// s doesn't work like h, so add functions separately
-			svg.addEventListener("click", () => {
-				applyTheme(savedTheme);
+			svg.addEventListener("click", async () => {
+				await applyTheme(savedTheme);
 			});
 
 			svg.append(
@@ -1501,16 +1501,16 @@ async function main() {
 	// 	All of my stuff launches from here
 	// Arras().themeColor is undefined when the player has not yet started playing the game
 	// thus, only create its html elements after Arras().themeColor is not undefined
-	var initThemeColorStuff = function() {
+	var initThemeColorStuff = async function() {
 		// set an interval to check if themeColor exists every 1 sec, and only
 		// create the theme stuff once it does and then clear the interval away
-		const checkIfThemeColorExistsInterval = setInterval(() => {
+		const checkIfThemeColorExistsInterval = setInterval(async () => {
 			// return early is themeColor doesn't exist yet
 			if ((typeof Arras().themeColor) == "undefined") {
 				return;
 			}
 
-			realInitThemeColorStuff();
+			await realInitThemeColorStuff();
 
 			clearInterval(checkIfThemeColorExistsInterval);
 		}, 1*1000)
@@ -1531,8 +1531,8 @@ async function main() {
 			const savedThemesArr = await getFromOrInitInStorage(savedThemesStorageKey, defaultSavedThemes);
 
 			// apply the saved theme, and build the ui in the process
-			applyTheme({themeDetails, config: {...settings, themeColor}});
-			buildGallerySection(savedThemesArr);
+			await applyTheme({themeDetails, config: {...settings, themeColor}});
+			await buildGallerySection(savedThemesArr);
 		}
 	}
 
@@ -1696,7 +1696,7 @@ async function main() {
 					var currentSavedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey) || '[]');
 					var newSavedThemes = [...themesToImportArr, ...currentSavedThemes];
 					GM_setValue(savedThemesStorageKey, JSON.stringify(newSavedThemes));
-					buildGallerySection(newSavedThemes);
+					await buildGallerySection(newSavedThemes);
 				}
 				else {
 					console.log('invalid tiger theme format')
@@ -1740,7 +1740,7 @@ async function main() {
 
 			// use the js object to change the game's colors
 			if (shouldApplyTheme) {
-				applyTheme(themeToImport);
+				await applyTheme(themeToImport);
 			}
 
 		} catch (error) {
@@ -1859,7 +1859,7 @@ async function main() {
 	} 
 
 	// ThemeColor Stuff Launches From Here
-	initThemeColorStuff();
+	await initThemeColorStuff();
 }
 
 main();
