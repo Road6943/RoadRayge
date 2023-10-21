@@ -1597,6 +1597,18 @@ async function main() {
 		// copy to clipboard
 		if (GM.setClipboard) {
 			await GM.setClipboard(themeToExport);
+		} else {
+			// Stay iOS userscript manager doesn't support GM.setClipboard
+			// So do this instead - https://stackoverflow.com/a/60420392
+			function iosSafariCopyToClipboard(str) {
+				const el = document.createElement('textarea');
+				el.value = str;
+				document.body.appendChild(el);
+				el.select();
+				document.execCommand('copy');
+				document.body.removeChild(el);
+			};
+			iosSafariCopyToClipboard(themeToExport);
 		}
 
 		console.log('Exported the following theme:');
