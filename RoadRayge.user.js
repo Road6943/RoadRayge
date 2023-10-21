@@ -12,7 +12,7 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM.addStyle
-// @grant        GM_setClipboard
+// @grant        GM.setClipboard
 // @license      MIT
 // ==/UserScript==
 
@@ -1528,7 +1528,7 @@ async function main() {
 
 
 	// export a theme as either a 'tiger' theme (using json format) or 'arras' theme (json format, only contains themeColor changes)
-	function exportTheme(
+	async function exportTheme(
 		type, 
 		arrasObj = Arras(), 
 		themeDetailsObj = JSON.parse(GM_getValue(themeDetailsStorageKey))
@@ -1580,7 +1580,7 @@ async function main() {
 		}
 
 		// copy to clipboard
-		GM_setClipboard(themeToExport);
+		await GM.setClipboard(themeToExport);
 
 		console.log('Exported the following theme:');
 		console.log(themeToExport);
