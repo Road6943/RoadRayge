@@ -1,6 +1,8 @@
 # RoadRayge
 Fully customizable theme and graphics editor for [arras.io](https://arras.io/). Successor to TIGER by Road#6943 and Arras Graphics Client by Ray Adams. We worked together to combine both of our editors into RoadRayge, giving you the best of both worlds!
 
+To provide feedback, message @road6943 or Road#6943 on Discord, or use [this form](https://docs.google.com/forms/d/e/1FAIpQLScu3JirmpF9YzDqP9JIZPJlGSsQDMEXnGtNY4zit7FaJgTpOg/viewform). You can also find me on the [Arras Theme Library Discord Server](https://discord.gg/DH2DP8JPhP)!
+
 ---
 
 **How to Install (Web):**
@@ -26,10 +28,19 @@ Fully customizable theme and graphics editor for [arras.io](https://arras.io/). 
 
 ---
 
-**How to Upgrade to a Newer Version:**
+**How to Upgrade to a Newer Version (Web):**
 1. Go to [this link right here](https://github.com/Road6943/RoadRayge/raw/main/RoadRayge.user.js), and you should see a Tampermonkey tab appear. 
 2. Click "Update" or "Reinstall" to upgrade to a newer version.
 3. Congrats! You're done! You can now return to playing [arras.io](https://arras.io/)!
+
+**How to Upgrade to a Newer Version (iOS Safari):**
+1. Open the "Stay" App
+2. Go to the Userscripts tab (leftmost tab in the menu at the bottom)
+3. Swipe right to left on the RoadRayge userscript box. Note the version number displayed in the bottom center of the box.
+4. At the bottom of the Stay App, click "Update"
+5. You should now see a higher version number in your RoadRayge userscript box
+6. Open up a new Safari tab and go to Arras.io (you may need to use a private/incognito tab)
+7. Enjoy!
 
 ---
 
