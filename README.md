@@ -45,18 +45,24 @@ To provide feedback, message @road6943 or Road#6943 on Discord, or use [this for
 ---
 
 ## Screenshots
+Color Picker:
 <img width="1250" alt="Color Picker" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-color-picker.png?raw=true">
-Color Picker
+
+Theme Gallery + Theme Filtering:
 <img width="1250" alt="Theme Gallery" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-theme-filtering.png?raw=true">
-Theme Gallery + Theme Filtering
+
+An Older Image Of The Theme Gallery:
 <img width="1250" alt="Older Version Of Theme Gallery" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-theme-gallery.png?raw=true">
-An Older Image Of The Theme Gallery
+
+Graphical Customization Options:
 <img width="1250" alt="Graphical Customization Options" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-graphical-gui.png?raw=true">
-Graphical Customization Options
+
+Custom Background Image:
 <img width="1250" alt="Custom Background Image" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-custom-background-image.png?raw=true">
-Custom Background Image
+
+All Sections Collapsed:
 <img width="1250" alt="All Sections Collapsed" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-all-collapsed.png?raw=true">
-All Sections Collapsed
+
 
 ---
 
