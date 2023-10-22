@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.5.2.0-alpha
+// @version      1.5.2.2-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -96,6 +96,7 @@ async function main() {
 
 	************************************************************************/
 
+	// Safari userscript manager (Stay) only supports GM_addStyle not GM.addStyle
 	GM_addStyle(`
 		:root {
 			--cog-svg: url('data:image/svg+xml,%3Csvg xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" fill%3D"%23505050" viewBox%3D"0 0 16 16" width%3D"20" height%3D"20"%3E%3Cpath d%3D"M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"%3E%3C%2Fpath%3E%3C%2Fsvg%3E');
@@ -228,6 +229,9 @@ async function main() {
 			width: 85%;
 			background-color: #2979df;
 			color: white;
+		}
+		.r-heading--h2:hover {
+			filter: brightness(var(--darken-on-hover));
 		}
 
 		.r-setting {
@@ -480,27 +484,27 @@ async function main() {
 	// Close container when you click outside of it
 	// Need to run this once here and once in-game bc otherwise
 	// 	having this open and then going in-game will break the click-to-close stuff
-	function addCloseContainerEventHandlers() {
+	function addCloseTopContainerEventHandlers() {
 		const gameScreen = document.querySelector('#game')?.contentDocument;	
 		if (!gameScreen) return;
 
 		// closeContainer is taken from an onclick event string in the code above
-		const container = document.querySelector('#r-container');
-		const closeContainer = () => {container.style.width = '0px'};
-		const isContainerOpen = () => (container.style.width !== '0px');
+		const topContainer = document.querySelector('#r-container');
+		const closeTopContainer = () => {topContainer.style.width = '0px'};
+		const isTopContainerOpen = () => (topContainer.style.width !== '0px');
 
 		// Close container when click or tap detected outside RoadRayge container
-		const closeContainerEventHandler = (e) => {
-			if (isContainerOpen() && !container.contains(e.target)) {
-				closeContainer();
+		const closeTopContainerEventHandler = (e) => {
+			if (isTopContainerOpen() && !topContainer.contains(e.target)) {
+				closeTopContainer();
 			}
 		}
 
-		gameScreen.addEventListener('click', closeContainerEventHandler);
-		gameScreen.addEventListener('touchstart', closeContainerEventHandler);
+		gameScreen.addEventListener('click', closeTopContainerEventHandler);
+		gameScreen.addEventListener('touchstart', closeTopContainerEventHandler);
 	};
 	// Run once for arras landing page, then once again later for in-game canvas
-	addCloseContainerEventHandlers();
+	addCloseTopContainerEventHandlers();
 
 	// Prevents keyboard input in the container from interfering with the game's controls
 	// for example, typing 'e' in the container shouldn't toggle autofire and typing 'wasd' shouldn't move your tank
@@ -511,7 +515,6 @@ async function main() {
 			});
 		});
 	}
-
 
 	// Settings button visual tweaks on game start (for visibility)
 	(function decreaseGearButtonVisibility() {
@@ -529,6 +532,45 @@ async function main() {
 		});
 	})();
 
+	// Run twice, once on load and once when first in-game
+	function addCollapseSectionsOnHeaderClickEventHandlers() {
+		// add < data-display="" > properties to all elements in roadrayge container
+		document.querySelectorAll('#r-container *').forEach(elem => {
+			// Most elements have a data-display="" or just blank
+			// 	this is fine because blank string causes browser to choose 
+			// 	default display value for that html element.
+			// Btw, don't change the line below to if !elem.dataset.display, because
+			//  empty string will be 'true', which we don't want as
+			// 	that will cause elements already looped over to be re-looped over, and 
+			// 	can cause bugs like causing closed sections on landing page load
+			//	to become unopenable when in-game.
+			if (!('display' in elem.dataset)) {
+				elem.dataset.display = elem.style.display;
+			}
+		});
+		
+		document.querySelectorAll('.r-heading--h2').forEach(elem => {
+			if (elem.dataset.collapse_handler_added) return;
+			
+			elem.addEventListener('click', () => {
+				const nextElem = elem?.nextSibling;
+				if (!nextElem) return;
+
+				nextElem.style.display = (nextElem.style.display === 'none') ? nextElem.dataset.display : 'none';
+			});
+
+			elem.dataset.collapse_handler_added = true;
+		});
+	}
+	addCollapseSectionsOnHeaderClickEventHandlers();
+
+	function collapseAllSections() {
+		// click all the headers to collapse their corresponding sections
+		document.querySelectorAll('.r-heading--h2').forEach(elem => {
+			elem.click();
+		});
+	}
+	collapseAllSections();
 
 	/*
 	** THEME COLOR STUFF WILL MOSTLY BE BELOW HERE ===========================================
@@ -806,7 +848,7 @@ async function main() {
 		// first, get all elements with the theme_index property and reset their display values
 		document.querySelectorAll(`[theme_index]`).forEach(elem => {
 			// The r-setting needs display flex, the rest are display block
-			elem.style.display =  elem.classList.contains('displayflex') ? 'flex' : 'block';
+			elem.style.display =  elem.dataset.display;
 		})
 		// next, loop over savedThemes and hide any at non-matching indexes
 		const savedThemes = JSON.parse(await GM.getValue(savedThemesStorageKey));
@@ -1368,7 +1410,7 @@ async function main() {
 				}, 'Hold For 3s To Delete Theme'),
 
 				// Theme Tags
-				h(`div.r-setting.displayflex`, { theme_index: idx },
+				h(`div.r-setting`, { theme_index: idx },
 					h('label.r-label', 'Tags:'),
 					h('input.r-input.r-input--text', {
 						theme_index: idx,
@@ -1541,7 +1583,9 @@ async function main() {
 			await applyTheme({themeDetails, config: {...settings, themeColor}});
 			await buildGallerySection(savedThemesArr);
 			// add click outside to close container functionality here
-			addCloseContainerEventHandlers();
+			addCloseTopContainerEventHandlers();
+			// allow sections to be collapsed by section header click
+			addCollapseSectionsOnHeaderClickEventHandlers();
 		}
 	}
 
