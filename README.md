@@ -65,8 +65,7 @@ All Sections Collapsed:
 <img width="1250" alt="All Sections Collapsed" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-all-collapsed.png?raw=true">
 
 Mobile High Zoom (Private Safari Tab):
-<img width="1250" alt="Mobile High Zoom, Private Safari Tab" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-mobile-high-zoom-private-safari-tab.jpg?raw=true
-">
+<img width="1250" alt="Mobile High Zoom, Private Safari Tab" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-mobile-high-zoom-private-safari-tab.jpg?raw=true">
 
 Mobile Low Zoom (Normal Safari Tab):
 <img width="1250" alt="Mobile Low Zoom, Normal Safari Tab" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-mobile-low-zoom-normal-safari-tab.PNG?raw=true">
