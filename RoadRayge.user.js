@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.5.2.2-alpha
+// @version      1.5.3-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -103,6 +103,9 @@ async function main() {
 			--gradient: linear-gradient(to bottom, #cbe0ff, #cfffff);
 			--slider-active: #2196F3;
 			--delete-color: #FE5605;
+			--arras-green: #8CBC3C;
+			--heading-color-1: #2979DF;
+			--heading-color-2: #07489C;
 			--darken-on-hover: 85%;
 		}
 
@@ -118,7 +121,7 @@ async function main() {
 			background: white var(--cog-svg) no-repeat center;
 		}
 
-		#r-btn--open::hover {
+		#r-btn--open:hover {
 			background-color: #EDEDF0;
 			opacity: 0.75;
 		}
@@ -132,10 +135,28 @@ async function main() {
 			background-color: var(--delete-color);
 			border-bottom-right-radius: 5px;
 		}
-
 		.r-btn--close:hover {
 			filter: brightness(var(--darken-on-hover));
 			color: white;
+		}
+
+		.r-btn--top {
+			position: sticky;
+			top: -5px;
+			left: 10px
+			right: 10px;
+			font-size: 20px;
+			text-decoration: none;
+			border-radius: 5px;
+			float: right;
+			z-index: 1000;
+		}
+		.r-btn--top:hover {
+			filter: brightness(var(--darken-on-hover));
+		}
+
+		#collapse-all-sections-btn {
+			background-color: var(--arras-green);
 		}
 
 		.r-btn--standard {
@@ -148,7 +169,6 @@ async function main() {
 			color: white;
 			width: 75%;
 		}
-
 		/* Darken on hover */
 		.r-btn--standard:hover {
 			filter: brightness(var(--darken-on-hover));
@@ -227,11 +247,16 @@ async function main() {
 			margin: 10px auto 10px auto;
 			border-radius: 5px;
 			width: 85%;
-			background-color: #2979df;
 			color: white;
 		}
 		.r-heading--h2:hover {
 			filter: brightness(var(--darken-on-hover));
+		}
+		.r-heading--h2:nth-of-type(odd) {
+			background-color: var(--heading-color-1);
+		}
+		.r-heading--h2:nth-of-type(even) {
+			background-color: var(--heading-color-2);
 		}
 
 		.r-setting {
@@ -373,6 +398,12 @@ async function main() {
 		}
 	}, '×');
 
+	const collapseAllSectionsButton = h('a.r-btn--standard.r-btn--top#collapse-all-sections-btn', {
+		onclick () {
+			collapseAllSections();
+		}
+	}, 'Collapse All')
+
 	const backgroundImageInput = h('input.r-input.r-input--text', { 
 		type: 'text',
 		value: backgroundImage || '',
@@ -431,28 +462,36 @@ async function main() {
 
 	const container = h('div#r-container',
 		closeButton,
+		collapseAllSectionsButton,
+
 		h('h1.r-heading--h1', 'RoadRayge Editor'),
+
 		h('h2.r-heading--h2', 'Background Image'),
 		h('div.r-setting',
 			h('label.r-label', 'URL:'),
 			backgroundImageInput
 		),
+
 		h('h2.r-heading--h2', 'Cursor'),
-		h('div.r-setting',
-			h('label.r-label', 'Cursor Style'),
-			cursorStyleInput
+		h('div#cursor-container',
+			h('div.r-setting',
+				h('label.r-label', 'Cursor Style'),
+				cursorStyleInput
+			),
+			h(`a.r-setting.r-description`, {
+				href: "https://github.com/Road6943/RoadRayge/blob/main/notes/cursor-info.md",
+				target: "_blank", // opens in new tab
+				rel: "noopener noreferrer",
+			},
+				"Click To Learn More!"
+			),
 		),
-		h(`a.r-setting.r-description`, {
-			href: "https://github.com/Road6943/RoadRayge/blob/main/notes/cursor-info.md",
-			target: "_blank", // opens in new tab
-			rel: "noopener noreferrer",
-		},
-			"Click To Learn More!"
-		),
+
 		h('h2.r-heading--h2', 'Graphical'),
 		h('div#graphical-container',
 			...settingsFactory('graphical')
 		),
+
 		h('h2.r-heading--h2', 'GUI'),
 		h('div#gui-container',
 			...settingsFactory('gui')
@@ -470,7 +509,25 @@ async function main() {
 		h('h2.r-heading--h2', 'Gallery'),
 		h('div#gallery-container',
 			h('center.r-label', 'You must be in-game to use this!')
-		)
+		),
+
+		// bottom stuff
+		h('div#bottom-container',
+			h(`a.r-setting.r-description`, {
+				href: "https://forms.gle/M425vYsiBqZzjdRx6",
+				target: "_blank", // opens in new tab
+				rel: "noopener noreferrer",
+			},
+				"Share Feedback!"
+			),
+			h(`a.r-setting.r-description`, {
+				href: "https://github.com/Road6943/RoadRayge",
+				target: "_blank", // opens in new tab
+				rel: "noopener noreferrer",
+			},
+				"Github (+ Install Instructions!)"
+			),
+		),
 	);
 
 	document.body.append(settingsButton, container);
@@ -567,7 +624,10 @@ async function main() {
 	function collapseAllSections() {
 		// click all the headers to collapse their corresponding sections
 		document.querySelectorAll('.r-heading--h2').forEach(elem => {
-			elem.click();
+			const nextElem = elem?.nextSibling;
+			if (!nextElem) return;
+
+			nextElem.style.display = 'none';
 		});
 	}
 	collapseAllSections();
