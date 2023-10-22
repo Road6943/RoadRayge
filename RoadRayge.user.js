@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.5.1-alpha
+// @version      1.5.2-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -100,6 +100,8 @@ async function main() {
 			--cog-svg: url('data:image/svg+xml,%3Csvg xmlns%3D"http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" fill%3D"%23505050" viewBox%3D"0 0 16 16" width%3D"20" height%3D"20"%3E%3Cpath d%3D"M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"%3E%3C%2Fpath%3E%3C%2Fsvg%3E');
 			--gradient: linear-gradient(to bottom, #cbe0ff, #cfffff);
 			--slider-active: #2196F3;
+			--delete-color: #FE5605;
+			--darken-on-hover: 85%;
 		}
 
 		#r-btn--open {
@@ -120,16 +122,18 @@ async function main() {
 		}
 
 		.r-btn--close {
-			position: absolute;
+			position: sticky;
 			top: -5px;
 			right: 10px;
 			font-size: 42px;
-			margin-left: 25px;
 			text-decoration: none;
+			background-color: var(--delete-color);
+			border-bottom-right-radius: 5px;
 		}
 
 		.r-btn--close:hover {
-			color: gray;
+			filter: brightness(var(--darken-on-hover));
+			color: white;
 		}
 
 		.r-btn--standard {
@@ -145,11 +149,11 @@ async function main() {
 
 		/* Darken on hover */
 		.r-btn--standard:hover {
-			filter: brightness(85%);
+			filter: brightness(var(--darken-on-hover));
 		}
 
-		#delete-theme-btn {
-			background-color: #FE5605; /* red */
+		.delete-theme-btn {
+			background-color: var(--delete-color); /* red */
 		}
 
 		#theme-import-input {
@@ -473,27 +477,29 @@ async function main() {
 	************************************************************************/
 
 	// Close container when you click outside of it
-	(function addCloseContainerEventHandlers() {
-		function addEventHandlers(element) {
-			const container = document.querySelector('#r-container');
-
-			// closeContainer is taken from an onclick event string in the code above
-			const closeContainer = () => {container.style.width = '0px'};
-			const isContainerOpen = () => (container.style.width !== '0px');
-
-			// Close container when click detected outside the window
-			element.addEventListener('click', e => {
-				if (isContainerOpen() && !container.contains(e.target)) {
-					closeContainer();
-				}
-			});
-		}
-
+	// Need to run this once here and once in-game bc otherwise
+	// 	having this open and then going in-game will break the click-to-close stuff
+	function addCloseContainerEventHandlers() {
 		const gameScreen = document.querySelector('#game')?.contentDocument;	
-		if (gameScreen) {
-			addEventHandlers(gameScreen);
+		if (!gameScreen) return;
+
+		// closeContainer is taken from an onclick event string in the code above
+		const container = document.querySelector('#r-container');
+		const closeContainer = () => {container.style.width = '0px'};
+		const isContainerOpen = () => (container.style.width !== '0px');
+
+		// Close container when click or tap detected outside RoadRayge container
+		const closeContainerEventHandler = (e) => {
+			if (isContainerOpen() && !container.contains(e.target)) {
+				closeContainer();
+			}
 		}
-	})();
+
+		gameScreen.addEventListener('click', closeContainerEventHandler);
+		gameScreen.addEventListener('touchstart', closeContainerEventHandler);
+	};
+	// Run once for arras landing page, then once again later for in-game canvas
+	addCloseContainerEventHandlers();
 
 	// Prevents keyboard input in the container from interfering with the game's controls
 	// for example, typing 'e' in the container shouldn't toggle autofire and typing 'wasd' shouldn't move your tank
@@ -1346,7 +1352,7 @@ async function main() {
 				),
 
 				// Delete Theme Button
-				h(`div.r-btn--standard.${getThemeIndexClass(idx)}#delete-theme-btn`, {
+				h(`div.r-btn--standard.${getThemeIndexClass(idx)}.delete-theme-btn`, {
 					theme_index: idx,
 					onmousedown () {
 						buttonClickStartTime.deleteTheme = performance.now();
@@ -1533,6 +1539,8 @@ async function main() {
 			// apply the saved theme, and build the ui in the process
 			await applyTheme({themeDetails, config: {...settings, themeColor}});
 			await buildGallerySection(savedThemesArr);
+			// add click outside to close container functionality here
+			addCloseContainerEventHandlers();
 		}
 	}
 
