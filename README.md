@@ -73,6 +73,9 @@ Mobile Low Zoom (Normal Safari Tab):
 ---
 
 ## Release History
+* 1.5-alpha
+  * Add iOS Safari support
+  * Make UI collapsible with sticky exit & collapse-all buttons for easier navigation
 * 1.4-alpha
   * Added cursor customization
   * Added theme tags and filtering
