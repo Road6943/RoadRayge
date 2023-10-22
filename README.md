@@ -25,6 +25,7 @@ To provide feedback, message @road6943 or Road#6943 on Discord, or use [this for
 10. Select "Always Allow" then "Always Allow on **THIS** Website", not Every Website
 11. Click Done, and now enjoy using RoadRayge on mobile!
 12. If you want to make sure Stay doesn't have access to any other websites, go to `Settings > Safari > Extensions > Allow These Extensions > Stay`
+13. For some users, RoadRayge will be very zoomed-in on Private Safari tabs but more zoomed-out on normal Safari tabs, so you can try both and see which you prefer.
 
 ---
 
@@ -63,6 +64,12 @@ Custom Background Image:
 All Sections Collapsed:
 <img width="1250" alt="All Sections Collapsed" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-all-collapsed.png?raw=true">
 
+Mobile High Zoom (Private Safari Tab):
+<img width="1250" alt="Mobile High Zoom, Private Safari Tab" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-mobile-high-zoom-private-safari-tab.jpg?raw=true
+">
+
+Mobile Low Zoom (Normal Safari Tab):
+<img width="1250" alt="Mobile Low Zoom, Normal Safari Tab" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-mobile-low-zoom-normal-safari-tab.PNG?raw=true">
 
 ---
 
