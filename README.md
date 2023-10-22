@@ -45,9 +45,18 @@ To provide feedback, message @road6943 or Road#6943 on Discord, or use [this for
 ---
 
 ## Screenshots
-<img width="1314" src="https://github.com/Road6943/RoadRayge/blob/main/RRscreenshot.png?raw=true">
-<img width="1215" alt="Home Page" src="https://user-images.githubusercontent.com/63924749/109587796-893f4f00-7abc-11eb-9c80-ffce058b5750.png">
-<img width="1314" alt="In-Game" src="https://user-images.githubusercontent.com/63924749/109587800-8ba1a900-7abc-11eb-9a0a-ac5bdcc23c44.png">
+<img width="1250" alt="Color Picker" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-color-picker.png?raw=true">
+Color Picker
+<img width="1250" alt="Theme Gallery" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-theme-filtering.png?raw=true">
+Theme Gallery + Theme Filtering
+<img width="1250" alt="Older Version Of Theme Gallery" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-theme-gallery.png?raw=true">
+An Older Image Of The Theme Gallery
+<img width="1250" alt="Graphical Customization Options" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-graphical-gui.png?raw=true">
+Graphical Customization Options
+<img width="1250" alt="Custom Background Image" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-custom-background-image.png?raw=true">
+Custom Background Image
+<img width="1250" alt="All Sections Collapsed" src="https://github.com/Road6943/RoadRayge/blob/main/images/roadrayge-all-collapsed.png?raw=true">
+All Sections Collapsed
 
 ---
 
