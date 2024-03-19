@@ -3,6 +3,8 @@ Arras will get a built-in theme editor update for its 6th birthday on April 22, 
 
 Once you have done so, please navigate to the Misc section and click the button labelled `Download All Themes In V1 Format` 
 
+You can also convert individual themes with [this tool](https://codepen.io/cx88/pen/rNbVGmQ) made by CX!
+
 Thank you for using TIGER and RoadRayge all these years. It has been wonderful seeing the themes you have all created, and I hope to see many more incredible themes with the launch of the new built-in theme editor!
 
 \
