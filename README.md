@@ -1,3 +1,24 @@
+# RoadRayge will shut down on April 22, 2024
+Arras will get a built-in theme editor update for its 6th birthday on April 22, 2024. To migrate all your themes to the format used by the new theme editor, please upgrade your RoadRayge to the latest version by clicking this [link](https://github.com/Road6943/RoadRayge/raw/main/RoadRayge.user.js)
+
+Once you have done so, please navigate to the Misc section and click the button labelled `Download All Themes In V1 Format` 
+
+Thank you for using TIGER and RoadRayge all these years. It has been wonderful seeing the themes you have all created, and I hope to see many more incredible themes with the launch of the new built-in theme editor!
+
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+\
+---
+
 # RoadRayge
 Fully customizable theme and graphics editor for [arras.io](https://arras.io/). Successor to TIGER by Road#6943 and Arras Graphics Client by Ray Adams. We worked together to combine both of our editors into RoadRayge, giving you the best of both worlds!
 
