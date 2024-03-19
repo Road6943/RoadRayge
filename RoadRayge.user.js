@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.5.3-alpha
+// @version      1.6-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
@@ -15,6 +15,7 @@
 // @grant        GM_addStyle
 // @grant        GM.setClipboard
 // @license      MIT
+// @require      https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js
 // ==/UserScript==
 
 async function main() {
@@ -169,8 +170,13 @@ async function main() {
 			color: white;
 			width: 75%;
 		}
+
+		.r-btn--golden {
+			background-color: goldenrod;
+		}
+
 		/* Darken on hover */
-		.r-btn--standard:hover {
+		.r-btn--standard:hover, .r-btn--golden:hover {
 			filter: brightness(var(--darken-on-hover));
 		}
 
@@ -1195,6 +1201,32 @@ async function main() {
 		];
 
 		const exportThemeElements = [
+			
+			// Arras V1 is the new format introduced in March 2024
+			// 	for arras's built-in theme editor. The old arras theme format is called V0 now,
+			//	though I'm not gonna change the code here.
+			h('div.r-setting', 
+				h('div.r-btn--standard.r-btn--golden#export-v1-btn', {
+					async onclick () {
+						await exportTheme('v1');
+					}
+				}, 'Export V1 Theme')
+			),
+			h(`div.r-setting.r-description`, 
+				"Usable in Arras's built-in theme editor."
+			),
+
+			h('div.r-setting', 
+				h('div.r-btn--standard.r-btn--golden#export-all-v1-btn', {
+					async onclick () {
+						await exportTheme('all-v1');
+					}
+				}, 'Download All In V1 Format')
+			),
+			h(`div.r-setting.r-description`, 
+				"Download file of all saved themes in a format usable with Arras's built-in theme editor."
+			),
+			
 			h('div.r-setting', 
 				h('div.r-btn--standard#export-tiger_json-btn', {
 					async onclick () {
@@ -1203,7 +1235,18 @@ async function main() {
 				}, 'Export Tiger Theme')
 			),
 			h(`div.r-setting.r-description`, 
-				"Best Option. Includes everything. Only works with RoadRayge and Tiger (Theme In-Game Editor)."
+				"Includes everything. Only works with RoadRayge and Tiger (Theme In-Game Editor)."
+			),
+
+			h('div.r-setting', 
+				h('div.r-btn--standard#export-all-btn', {
+					async onclick () {
+						await exportTheme('all-tiger');
+					}
+				}, 'Export All In TIGER Format')
+			),
+			h(`div.r-setting.r-description`, 
+				"Your friends can import this into their RoadRayge client!"
 			),
 
 			h('div.r-setting', 
@@ -1215,17 +1258,6 @@ async function main() {
 			),
 			h(`div.r-setting.r-description`, 
 				"Can be used with Arras.io's custom theme input. Only has colors & border. DOES NOT INCLUDE ANY GRAPHICAL OR GUI PROPERTIES."
-			),
-
-			h('div.r-setting', 
-				h('div.r-btn--standard#export-all-btn', {
-					async onclick () {
-						await exportTheme('all');
-					}
-				}, 'Export All Saved Themes')
-			),
-			h(`div.r-setting.r-description`, 
-				"Your friends can import this into their RoadRayge client!"
 			),
 		];
 
@@ -1690,6 +1722,7 @@ async function main() {
 
 		var themeToExport = {};
 		var copiedToClipboardMsg = 'Copied To Clipboard!';
+		var downloadedFileMsg = 'Downloaded File!';
 
 		// 'tiger' themes are purposefully incompatible with 'arras' themes because we don't want people who are not familiar with tiger
 		// to become confused why a theme they got/found from someone else doesn't seem to work properly 
@@ -1725,9 +1758,24 @@ async function main() {
 			themeToExport = JSON.stringify(themeToExport);
 			temporarilyChangeText("#export-bc-btn", copiedToClipboardMsg);
 		}
-		else if (type === 'all') {
+		else if (type === 'all-tiger') {
 			themeToExport = 'TIGER_LIST' + ((await GM.getValue(savedThemesStorageKey)) || '[]');
 			temporarilyChangeText("#export-all-btn", copiedToClipboardMsg);
+		}
+		else if (type === 'v1') {
+			// pass in the same obj that tiger conversion uses
+			themeToExport = convertTigerObjToV1Str({
+				themeDetails: themeDetailsObj,
+				config: arrasObj,
+			});
+			temporarilyChangeText("#export-v1-btn", copiedToClipboardMsg);
+		}
+		// don't copy to clipboard, just download a csv instead
+		// so return early
+		else if (type === 'all-v1') {
+			await convertAllTigerThemeObjsToV1ThemeStrs();
+			temporarilyChangeText("#export-all-v1-btn", downloadedFileMsg);
+			return;
 		}
 		else {
 			console.log('Unsupported export theme type: ' + type.toString());
@@ -1745,6 +1793,127 @@ async function main() {
 		console.log(themeToExport);
 	}
 
+/* =============== BEGIN V1 EXPORTING ================= */
+
+
+async function convertAllTigerThemeObjsToV1ThemeStrs() {
+	const failedParses = [];
+	const successfulParses = [];
+
+	let tigerThemesList = await GM.getValue(savedThemesStorageKey);
+	tigerThemesList = JSON.parse(tigerThemesList || '[]');
+
+	for (const tigerThemeObj of tigerThemesList) {
+		let convertedThemeStr = null;
+		
+		try {
+			convertedThemeStr = convertTigerObjToV1Str(tigerThemeObj);
+		} 
+		catch {
+			// if non ascii characters present it may mess up conversion
+			// so use encodeURI and try 1 more time
+			try {
+				let { name, author } = tigerThemeObj.themeDetails;
+				tigerThemeObj.themeDetails = {
+					name: encodeURI(name),
+					author: encodeURI(author),
+				};
+				convertedThemeStr = convertTigerObjToV1Str(tigerThemeObj);
+			}
+			catch {
+				failedParses.push(tigerThemeObj);
+			}
+		}
+		
+		successfulParses.push({
+			Name: tigerThemeObj.themeDetails.name,
+			Author: tigerThemeObj.themeDetails.author,
+			Theme: convertedThemeStr,
+		});
+	}
+
+	// handle failed parses
+	for (const fail of failedParses) {
+		console.error(
+		'FAILED to parse!:\n ' 
+		+ JSON.stringify(fail)
+		);
+	}
+
+	// make csv and download it
+	const csvStr = Papa.unparse(successfulParses);
+	downloadToFile("themes.csv", csvStr);
+}
+
+function convertTigerObjToV1Str(tigerThemeObj) {
+	let newThemeObj = tigerThemeObjToArrasThemeObj(tigerThemeObj);
+	let newThemeStr = arrasThemeObjToStringInFormatV1(newThemeObj);
+	return newThemeStr;
+}
+
+// Modified from CX at https://codepen.io/road-to-100k/pen/WNWoPoY
+// original function: parsers.tiger
+// modified to not parse TIGER_JSON string and instead just take obj Tiger uses directly
+function tigerThemeObjToArrasThemeObj(tigerThemeObj) {
+	let {
+	themeDetails: { name, author },
+	config: {
+		graphical: { darkBorders, neon },
+		themeColor: { table, border },
+	},
+	} = tigerThemeObj;
+
+	table = table.map(colorHex => typeof colorHex !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(colorHex) ? 0 : parseInt(colorHex.slice(1), 16))
+
+	table[4] = table[0]
+	table[7] = table[16]
+
+	let blend = Math.min(1, Math.max(0, border))
+
+	return {
+	name: (name || '').trim().slice(0, 40) || 'Unknown Theme',
+	author: (author || '').trim().slice(0, 40),
+	table,
+	specialTable: [table[neon ? 18 : 9]],
+	blend: darkBorders ? 1 : blend,
+	neon,
+	}
+};
+
+// lifted straight from CX - https://codepen.io/road-to-100k/pen/WNWoPoY
+// original function named stringifiers.v1
+function arrasThemeObjToStringInFormatV1(theme) {
+	let { name, author, table, specialTable, blend, neon } = theme
+	
+	let string = '\x6a\xba\xda\xb3\xf0'
+	string += String.fromCharCode(1)
+	string += String.fromCharCode(name.length) + name
+	string += String.fromCharCode(author.length) + author
+	string += String.fromCharCode(table.length)
+	for (let color of table) string += String.fromCharCode(color >> 16, (color >> 8) & 0xff, color & 0xff)
+	string += String.fromCharCode(specialTable.length)
+	for (let color of specialTable) string += String.fromCharCode(color >> 16, (color >> 8) & 0xff, color & 0xff)
+	string += String.fromCharCode(blend >= 1 ? 255 : blend < 0 ? 0 : Math.floor(blend * 0x100))
+	string += String.fromCharCode(neon ? 1 : 0)
+	return btoa(string).replace(/=+/, '')
+};
+
+// https://stackoverflow.com/questions/3665115/how-to-create-a-file-in-memory-for-user-to-download-but-not-through-server
+function downloadToFile(filename, text) {
+	var element = document.createElement('a');
+	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+	element.setAttribute('download', filename);
+
+	element.style.display = 'none';
+	document.body.appendChild(element);
+
+	element.click();
+
+	document.body.removeChild(element);
+}
+
+/* ============== END V1 EXPORTING =============== */
+	
 	// takes in a themeObj, and changes the games visual properties using it
 	// themeObj is basically the same format as Arras()
 	// be careful not to simply assign this.config to a new object, 
