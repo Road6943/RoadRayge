@@ -1,5 +1,5 @@
 # RoadRayge will shut down on March 22, 2024
-Arras will get a built-in theme editor update for its 6th birthday on April 22, 2024. To migrate all your themes to the format used by the new theme editor, please upgrade your RoadRayge to the latest version by clicking this [link](https://github.com/Road6943/RoadRayge/raw/main/RoadRayge.user.js)
+Arras will get a built-in theme editor update for its 6th birthday on March 22, 2024. To migrate all your themes to the format used by the new theme editor, please upgrade your RoadRayge to the latest version by clicking this [link](https://github.com/Road6943/RoadRayge/raw/main/RoadRayge.user.js)
 
 Once you have done so, please navigate to the Misc section and click the button labelled `Download All Themes In V1 Format` 
 
