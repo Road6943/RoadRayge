@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         RoadRayge - Arras Graphics Editor
 // @namespace    https://github.com/Ray-Adams
-// @version      1.6-alpha
+// @version      1.6.2-alpha
 // @description  Fully customizable theme and graphics editor for arras.io
 // @author       Ray Adams & Road
 // @match        *://arras.io/*
+// @match        *://beta.arras.io/*
 // @match        *://arras.netlify.app/*
 // @homepageURL  https://github.com/Road6943/RoadRayge
 // @supportURL   https://github.com/Road6943/RoadRayge/issues
@@ -18,7 +19,21 @@
 // @require      https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js
 // ==/UserScript==
 
+// these have to be var to avoid 'cannot access before initialization' error
+var themeDetailsStorageKey = "RR_themeDetails";
+var themeColorStorageKey = "RR_themeColor";
+var savedThemesStorageKey = "RR_savedThemes";
+var filterQueryStorageKey = "RR_filterQuery";
+
 async function main() {
+	// Update for 22 Mar 2024
+	// Allow ppl to use RR until its discontinued
+	// Afterwards, give option to download all themes
+	if (typeof Arras === 'undefined') {
+		await letUsersDownloadThemesInV1FormatAfterArrasObjIsDiscontinued();
+		return;
+	}
+
 	const arras = Arras();
 	const clone = JSON.parse(JSON.stringify(arras));
 	const settings = await GM.getValue('settings', clone);
@@ -644,12 +659,6 @@ async function main() {
 
 	// allows access to certain variables at init time because functions are hoisted above var's
 	function HOISTED(){};
-
-	// these have to be var to avoid 'cannot access before initialization' error
-	var themeDetailsStorageKey = "RR_themeDetails";
-	var themeColorStorageKey = "RR_themeColor";
-	var savedThemesStorageKey = "RR_savedThemes";
-	var filterQueryStorageKey = "RR_filterQuery";
 
 	// used to ensure user holds down btn for 3 seconds before the functionality actually happens
 	// to prevent accidental stray clicks
@@ -1792,127 +1801,6 @@ async function main() {
 		console.log('Exported the following theme:');
 		console.log(themeToExport);
 	}
-
-/* =============== BEGIN V1 EXPORTING ================= */
-
-
-async function convertAllTigerThemeObjsToV1ThemeStrs() {
-	const failedParses = [];
-	const successfulParses = [];
-
-	let tigerThemesList = await GM.getValue(savedThemesStorageKey);
-	tigerThemesList = JSON.parse(tigerThemesList || '[]');
-
-	for (const tigerThemeObj of tigerThemesList) {
-		let convertedThemeStr = null;
-		
-		try {
-			convertedThemeStr = convertTigerObjToV1Str(tigerThemeObj);
-		} 
-		catch {
-			// if non ascii characters present it may mess up conversion
-			// so use encodeURI and try 1 more time
-			try {
-				let { name, author } = tigerThemeObj.themeDetails;
-				tigerThemeObj.themeDetails = {
-					name: encodeURI(name),
-					author: encodeURI(author),
-				};
-				convertedThemeStr = convertTigerObjToV1Str(tigerThemeObj);
-			}
-			catch {
-				failedParses.push(tigerThemeObj);
-			}
-		}
-		
-		successfulParses.push({
-			Name: tigerThemeObj.themeDetails.name,
-			Author: tigerThemeObj.themeDetails.author,
-			Theme: convertedThemeStr,
-		});
-	}
-
-	// handle failed parses
-	for (const fail of failedParses) {
-		console.error(
-		'FAILED to parse!:\n ' 
-		+ JSON.stringify(fail)
-		);
-	}
-
-	// make csv and download it
-	const csvStr = Papa.unparse(successfulParses);
-	downloadToFile("themes.csv", csvStr);
-}
-
-function convertTigerObjToV1Str(tigerThemeObj) {
-	let newThemeObj = tigerThemeObjToArrasThemeObj(tigerThemeObj);
-	let newThemeStr = arrasThemeObjToStringInFormatV1(newThemeObj);
-	return newThemeStr;
-}
-
-// Modified from CX at https://codepen.io/road-to-100k/pen/WNWoPoY
-// original function: parsers.tiger
-// modified to not parse TIGER_JSON string and instead just take obj Tiger uses directly
-function tigerThemeObjToArrasThemeObj(tigerThemeObj) {
-	let {
-	themeDetails: { name, author },
-	config: {
-		graphical: { darkBorders, neon },
-		themeColor: { table, border },
-	},
-	} = tigerThemeObj;
-
-	table = table.map(colorHex => typeof colorHex !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(colorHex) ? 0 : parseInt(colorHex.slice(1), 16))
-
-	table[4] = table[0]
-	table[7] = table[16]
-
-	let blend = Math.min(1, Math.max(0, border))
-
-	return {
-	name: (name || '').trim().slice(0, 40) || 'Unknown Theme',
-	author: (author || '').trim().slice(0, 40),
-	table,
-	specialTable: [table[neon ? 18 : 9]],
-	blend: darkBorders ? 1 : blend,
-	neon,
-	}
-};
-
-// lifted straight from CX - https://codepen.io/road-to-100k/pen/WNWoPoY
-// original function named stringifiers.v1
-function arrasThemeObjToStringInFormatV1(theme) {
-	let { name, author, table, specialTable, blend, neon } = theme
-	
-	let string = '\x6a\xba\xda\xb3\xf0'
-	string += String.fromCharCode(1)
-	string += String.fromCharCode(name.length) + name
-	string += String.fromCharCode(author.length) + author
-	string += String.fromCharCode(table.length)
-	for (let color of table) string += String.fromCharCode(color >> 16, (color >> 8) & 0xff, color & 0xff)
-	string += String.fromCharCode(specialTable.length)
-	for (let color of specialTable) string += String.fromCharCode(color >> 16, (color >> 8) & 0xff, color & 0xff)
-	string += String.fromCharCode(blend >= 1 ? 255 : blend < 0 ? 0 : Math.floor(blend * 0x100))
-	string += String.fromCharCode(neon ? 1 : 0)
-	return btoa(string).replace(/=+/, '')
-};
-
-// https://stackoverflow.com/questions/3665115/how-to-create-a-file-in-memory-for-user-to-download-but-not-through-server
-function downloadToFile(filename, text) {
-	var element = document.createElement('a');
-	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-	element.setAttribute('download', filename);
-
-	element.style.display = 'none';
-	document.body.appendChild(element);
-
-	element.click();
-
-	document.body.removeChild(element);
-}
-
-/* ============== END V1 EXPORTING =============== */
 	
 	// takes in a themeObj, and changes the games visual properties using it
 	// themeObj is basically the same format as Arras()
@@ -2173,6 +2061,136 @@ function downloadToFile(filename, text) {
 
 	// ThemeColor Stuff Launches From Here
 	await initThemeColorStuff();
+}
+
+/* =============== BEGIN V1 EXPORTING ================= */
+
+
+async function convertAllTigerThemeObjsToV1ThemeStrs() {
+	const failedParses = [];
+	const successfulParses = [];
+
+	let tigerThemesList = await GM.getValue(savedThemesStorageKey);
+	tigerThemesList = JSON.parse(tigerThemesList || '[]');
+
+	for (const tigerThemeObj of tigerThemesList) {
+		let convertedThemeStr = null;
+		
+		try {
+			convertedThemeStr = convertTigerObjToV1Str(tigerThemeObj);
+		} 
+		catch {
+			// if non ascii characters present it may mess up conversion
+			// so use encodeURI and try 1 more time
+			try {
+				let { name, author } = tigerThemeObj.themeDetails;
+				tigerThemeObj.themeDetails = {
+					name: encodeURI(name),
+					author: encodeURI(author),
+				};
+				convertedThemeStr = convertTigerObjToV1Str(tigerThemeObj);
+			}
+			catch {
+				failedParses.push(tigerThemeObj);
+			}
+		}
+		
+		successfulParses.push({
+			Name: tigerThemeObj.themeDetails.name,
+			Author: tigerThemeObj.themeDetails.author,
+			Theme: convertedThemeStr,
+		});
+	}
+
+	// handle failed parses
+	for (const fail of failedParses) {
+		console.error(
+		'FAILED to parse!:\n ' 
+		+ JSON.stringify(fail)
+		);
+	}
+
+	// make csv and download it
+	const csvStr = Papa.unparse(successfulParses);
+	downloadToFile("themes.csv", csvStr);
+}
+
+function convertTigerObjToV1Str(tigerThemeObj) {
+	let newThemeObj = tigerThemeObjToArrasThemeObj(tigerThemeObj);
+	let newThemeStr = arrasThemeObjToStringInFormatV1(newThemeObj);
+	return newThemeStr;
+}
+
+// Modified from CX at https://codepen.io/road-to-100k/pen/WNWoPoY
+// original function: parsers.tiger
+// modified to not parse TIGER_JSON string and instead just take obj Tiger uses directly
+function tigerThemeObjToArrasThemeObj(tigerThemeObj) {
+	let {
+	themeDetails: { name, author },
+	config: {
+		graphical: { darkBorders, neon },
+		themeColor: { table, border },
+	},
+	} = tigerThemeObj;
+
+	table = table.map(colorHex => typeof colorHex !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(colorHex) ? 0 : parseInt(colorHex.slice(1), 16))
+
+	table[4] = table[0]
+	table[7] = table[16]
+
+	let blend = Math.min(1, Math.max(0, border))
+
+	return {
+	name: (name || '').trim().slice(0, 40) || 'Unknown Theme',
+	author: (author || '').trim().slice(0, 40),
+	table,
+	specialTable: [table[neon ? 18 : 9]],
+	blend: darkBorders ? 1 : blend,
+	neon,
+	}
+};
+
+// lifted straight from CX - https://codepen.io/road-to-100k/pen/WNWoPoY
+// original function named stringifiers.v1
+function arrasThemeObjToStringInFormatV1(theme) {
+	let { name, author, table, specialTable, blend, neon } = theme
+	
+	let string = '\x6a\xba\xda\xb3\xf0'
+	string += String.fromCharCode(1)
+	string += String.fromCharCode(name.length) + name
+	string += String.fromCharCode(author.length) + author
+	string += String.fromCharCode(table.length)
+	for (let color of table) string += String.fromCharCode(color >> 16, (color >> 8) & 0xff, color & 0xff)
+	string += String.fromCharCode(specialTable.length)
+	for (let color of specialTable) string += String.fromCharCode(color >> 16, (color >> 8) & 0xff, color & 0xff)
+	string += String.fromCharCode(blend >= 1 ? 255 : blend < 0 ? 0 : Math.floor(blend * 0x100))
+	string += String.fromCharCode(neon ? 1 : 0)
+	return btoa(string).replace(/=+/, '')
+};
+
+// https://stackoverflow.com/questions/3665115/how-to-create-a-file-in-memory-for-user-to-download-but-not-through-server
+function downloadToFile(filename, text) {
+	var element = document.createElement('a');
+	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+	element.setAttribute('download', filename);
+
+	element.style.display = 'none';
+	document.body.appendChild(element);
+
+	element.click();
+
+	document.body.removeChild(element);
+}
+
+/* ============== END V1 EXPORTING =============== */
+
+async function letUsersDownloadThemesInV1FormatAfterArrasObjIsDiscontinued() {
+	// Allow users to download all their themes in the new v1 format
+    // So they can use them with Arras's built-in theme editor
+    if (confirm("RoadRayge has been discontinued. Click OK to download all your saved themes.")) {
+		// not using top level await bc some 
+		await convertAllTigerThemeObjsToV1ThemeStrs();
+	}
 }
 
 main();
