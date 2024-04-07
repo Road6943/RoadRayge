@@ -7,6 +7,8 @@ After Mar 22, you will instead see a popup that asks if you want to download you
 
 You can also convert individual themes with [this tool](https://codepen.io/cx88/pen/rNbVGmQ) made by CX!
 
+[Backup link (+ fixes issue where weird characters mess up the previous tool)](https://codepen.io/road-to-100k/pen/WNWoPoY?editors=1111)
+
 Thank you for using TIGER and RoadRayge all these years. It has been wonderful seeing the themes you have all created, and I hope to see many more incredible themes with the launch of the new built-in theme editor!
 
 \
